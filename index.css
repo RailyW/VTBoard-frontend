@@ -16,19 +16,21 @@ body {
 
 #title_area {
     width: 100%;
-    height: 180px;
+    height: 120px;
     text-align: center;
 }
 
 #panel_area {
-    width: 70%;
+    display: flex;
+    width: 1300px;
     height: 700px;
     background-color: aliceblue;
     border: 1px solid black;
+    border-radius: 10px;
 }
 
 #page_nav {
-    width: 10%;
+    width: 300px;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -36,3 +38,24 @@ body {
     border: 1px solid black;
 }
 
+.page_btn {
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #f0f0f0;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-weight: bold;
+    width: 200px;
+}
+
+.page_btn.active {
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+}
+
+#page_area {
+    width: 1000px;
+    padding: 0 30px;
+}

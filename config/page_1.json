@@ -1,0 +1,18 @@
+{
+  "welcome": {
+    "model": "Shimokitazawa",
+    "manufacturer": "Tadokoro",
+    "serialNumber": "114514",
+    "maxOutputRating": "1919810",
+    "firmware": "GG",
+    "multiAddr": "nope"
+  },
+  "LAN": {
+    "ipAddr": "192.168.1.1",
+    "macAddr": "0:0:0:0"
+  },
+  "VISA": {
+    "description": "this is bad",
+    "usingIP": "192.168.1.2"
+  }
+}

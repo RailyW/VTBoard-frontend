@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>VT-Board</title>
-    <link rel="stylesheet" href="src/styles/index.css" />
-    <script src="src/services/router.js"></script>
+    <link rel="stylesheet" href="/index.css" />
+    <script src="/services.js"></script>
 </head>
 <body>
     <div id="main_div">
@@ -13,9 +13,21 @@
         </div>
         <div id="panel_area">
             <div id="page_nav">
-                <div class="page_btn">
-                    hello?
+                <div class="page_btn active" onclick="loadPage(0)">
+                    Home
                 </div>
+                <div class="page_btn" onclick="loadPage(1)">
+                    DC Power
+                </div>
+                <div class="page_btn" onclick="loadPage(2)">
+                    LAN
+                </div>
+                <div class="page_btn" onclick="loadPage(3)">
+                    Help
+                </div>
+            </div>
+            <div id="page_area">
+
             </div>
         </div>
     </div>
