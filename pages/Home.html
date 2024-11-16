@@ -1,0 +1,179 @@
+<div id="page_1" class="page">
+    <table class="main-table">
+        <tr>
+            <td class="left-column">
+                <table class="inner-table">
+                    <tr><th colspan="2">Welcome</th></tr>
+                    <tr>
+                        <th class="label-cell">TDK-LAMBDA Model:</th>
+                        <td><div id="system_model" class="value-cell">powerSupplyModel</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">Manufacturer:</th>
+                        <td><div id="system_manufacturer" class="value-cell">manufacturer</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">Serial Number:</th>
+                        <td><div id="serial_number" class="value-cell">serialNumber</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">Maximum Output Ratings:</th>
+                        <td><div id="max_output" class="value-cell">maximumOutputRatings</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">Firmware Revision:</th>
+                        <td><div id="firmware" class="value-cell">firmWareRevision</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">Multi-drop Address:</th>
+                        <td><div id="multi_drop_addr" class="value-cell">multiDropAddress</div></td>
+                    </tr>
+                </table>
+            </td>
+            <td class="right-column">
+                <table class="inner-table">
+                    <tr><th colspan="2">LAN</th></tr>
+                    <tr>
+                        <th class="label-cell">IP Address</th>
+                        <td><div id="system_ip" class="value-cell">-</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">MAC Address</th>
+                        <td><div id="system_mac" class="value-cell">macAddress</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">Hostname</th>
+                        <td>
+                            <div id="system_hostname" class="value-cell">-</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">LXI Version</th>
+                        <td><div id="lxi_version" class="value-cell">-</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">Auto-MDIX</th>
+                        <td><div id="auto_mdix" class="value-cell">-</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">Auto-Negotiate</th>
+                        <td><div id="auto_negotiate" class="value-cell">Auto select</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">Multicast DNS</th>
+                        <td><div id="multicast_dns" class="value-cell">-</div></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <table class="inner-table">
+                    <tr><th colspan="2">VISA</th></tr>
+                    <tr>
+                        <th class="label-cell">Description:</th>
+                        <td><div id="description" class="value-cell">-</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">VISA Name using IP Address:</th>
+                        <td><div id="vname_ip" class="value-cell">-</div></td>
+                    </tr>
+                    <tr>
+                        <th class="label-cell">VISA Name using Hostname:</th>
+                        <td><div id="vname_host" class="value-cell">-</div></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<style>
+    .main-table {
+        width: 100%;
+        background-color: #669999;
+        border-spacing: 30px;
+    }
+
+    .left-column, .right-column {
+        vertical-align: top;
+        width: 50%;
+    }
+
+    .inner-table {
+        width: 100%;
+        background-color: #FFFFFF;
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+
+    .inner-table th, .inner-table td {
+        border: 1px solid black;
+        padding: 8px;
+    }
+
+    .label-cell {
+        text-align: left;
+        width: 200px;
+        padding-left: 20px;
+        vertical-align: top;
+    }
+
+    .value-cell {
+        text-align: left;
+    }
+</style>
+
+<script>
+    (() => {
+        let dataPollingInterval = null;
+        const fetchData = async () => {
+            const response = await fetch('../config/Home.json');
+            return response.json();
+        };
+
+        const updatePageData = (data) => {
+            document.getElementById('system_model').textContent = data.welcome.system_model || '-';
+            document.getElementById('system_manufacturer').textContent = data.welcome.system_manufacturer || '-';
+            document.getElementById('serial_number').textContent = data.welcome.serial_number || '-';
+            document.getElementById('max_output').textContent = data.welcome.max_output || '-';
+            document.getElementById('firmware').textContent = data.welcome.firmware || '-';
+            document.getElementById('multi_drop_addr').textContent = data.welcome.multi_drop_addr || '-';
+
+            document.getElementById('system_ip').textContent = data.LAN.system_ip || '-';
+            document.getElementById('system_mac').textContent = data.LAN.system_mac || '-';
+            document.getElementById('system_hostname').textContent = data.LAN.system_hostname || '-';
+            document.getElementById('lxi_version').textContent = data.LAN.lxi_version || '-';
+            document.getElementById('auto_mdix').textContent = data.LAN.auto_mdix || '-';
+            document.getElementById('auto_negotiate').textContent = data.LAN.auto_negotiate || '-';
+            document.getElementById('multicast_dns').textContent = data.LAN.multicast_dns || '-';
+
+            document.getElementById('description').textContent = data.VISA.description || '-';
+            document.getElementById('vname_ip').textContent = data.VISA.vname_ip || '-';
+            document.getElementById('vname_host').textContent = data.VISA.vname_host || '-';
+        };
+
+        const startDataPolling = () => {
+            const loadData = async () => {
+                try {
+                    const data = await fetchData();
+                    updatePageData(data);
+                } catch (error) {
+                    console.error('Failed to fetch data:', error);
+                }
+            };
+            loadData();
+            dataPollingInterval = setInterval(loadData, 1000);
+        };
+
+        window.setupPageCleanup = () => {
+            if (dataPollingInterval) {
+                clearInterval(dataPollingInterval);
+                dataPollingInterval = null;
+                console.log('dataPollingInterval Stopped');
+            }
+        }
+
+        startDataPolling();
+    })();
+</script>

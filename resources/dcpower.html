@@ -1,0 +1,1744 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+	<style type="text/css">
+		.tab-content {
+			display: none;
+		}
+		.tab-content.active {
+			display: block;
+		}
+		.tab {
+			cursor: pointer;
+			padding: 10px;
+			background-color: #ECECFF;
+			color: #000;
+			font-weight: bold;
+			display: inline-block;
+			margin-right: 5px;
+		}
+		.tab.active {
+			background-color: #669999;
+			color: #FFF;
+		}
+	</style>
+	<script type="text/javascript">
+		function showTab(index) {
+			var tabs = document.getElementsByClassName('tab');
+			var contents = document.getElementsByClassName('tab-content');
+
+			for (var i = 0; i < tabs.length; i++) {
+				tabs[i].classList.remove('active');
+				contents[i].classList.remove('active');
+			}
+
+			tabs[index].classList.add('active');
+			contents[index].classList.add('active');
+		}
+
+		window.onload = function() {
+			showTab(0); // ???????tab
+		};
+	</script>
+	<meta http-equiv="content-type" content="text/html;charset=ISO-8859-4"><title>Lambda - DC Power</title>
+
+	<link rel="stylesheet" href="example.css" TYPE="text/css" MEDIA="screen">
+
+
+	<script  type="text/javascript" src="tabber.js" >
+	</script>
+	<script  type="text/javascript">
+		var CurrTab;
+		var  dcDataReqPeriod;
+		var  dcDataReqPause;
+		var  dcDataReqPauseOnPage;
+		var voltCurrView;
+		var requestedDataType;
+		var connectTimeout = 0;
+		document.write('<style type="text/css">.tabber{display:none;}<\/style>');
+		var AliveTimeLeft = 2000;
+		var AliveTimeCharged = 0;
+		var countAliveFail = 0;
+		var connectTimeoutIter;
+		var oneTimeVoltCurrUpdate = 0;
+		var iterationCheckCount = 0;
+		var alertDone1 = 0;
+		var alertDone2 = 0;
+		var PS_BitMap = 0;
+		var previousIsLoggin = 0;
+		var scanPsContinue = false;
+		var firstProlongAliveSkipCount = 0;
+		var alertOfChangeShown = 0;
+		var alertOfChangeShownDone = 0;
+		var reportConnLoggOutAddit = 0;
+
+
+		function setProlongAlive( iter )
+		{
+			connectTimeoutIter = iter;
+			if(AliveTimeCharged == 0){
+				window.setTimeout("ProlongAliveTime()", AliveTimeLeft);
+				AliveTimeCharged = 1;
+			}
+		}
+
+		function ProlongAliveTime()
+		{
+			var ProlongAliveTimeObj = false;
+			var i;
+			var obj = document.getElementById("CurrentSupply");
+			function ProlongAliveTimeComplete()
+			{
+				if(ProlongAliveTimeObj.readyState == 4)
+				{
+					if(ProlongAliveTimeObj.status == 200 )
+					{
+						var data = ProlongAliveTimeObj.responseText.split("|");
+						if(firstProlongAliveSkipCount < 8)
+							firstProlongAliveSkipCount++;
+						//AliveTimeLeft = parseInt( data[0] );
+						//if(AliveTimeLeft < 2000)
+						//{
+						//	AliveTimeLeft = 2000;
+						//}
+						if(data[1] != null && IsLogin && data[1] != '1' && ++iterationCheckCount == 2){
+							setTimeoutPause(1);
+							if(reportConnLoggOut==0 && reportConnLoggOutAddit == 0){
+								alert("Your connection is logged out.");
+								reportConnLoggOut = 1;//reportConnLoggOut
+								reportConnLoggOutAddit = 1;
+							}
+							setTimeoutPause(0);
+							checkLoginGet();
+						}else{
+							if( !IsLogin || (IsLogin && data[1] == '1')){
+								iterationCheckCount = 0;
+								reportConnLoggOutAddit = 0;
+							}
+						}
+
+						notRespondMessViewed = false;
+						countAliveFail = 0;
+						if(data[4] != null && data[4] == "1"){
+							alertOfChangeShown = 1;
+						}
+						if(alertOfChangeShown == 1 && alertOfChangeShownDone == 0){
+							setTimeoutPause(1);
+							alertOfChangeShownDone = 1;
+							alert("Multi-drop address of PS changed. Wait for Refreshing list.");
+							setTimeoutPause(0);
+							window.setTimeout("GetConnectedPs()",500);
+						}
+						if(scanPsContinue)
+							return;
+						if(data[3] != null && PS_BitMap != parseInt(data[3]) && alertOfChangeShown == 0){
+							scanPs( parseInt(data[3]) );
+							PS_BitMap = parseInt(data[3]);
+						}
+						if(!IsLogin && data[2] != null){
+							if( obj.options[obj.selectedIndex].value != data[2] ){
+								if(PS_BitMap != parseInt(data[3])){
+									scanPs( parseInt(data[3]) );
+									PS_BitMap = parseInt(data[3]);
+								}
+								for(i=0;i<obj.length;i++)
+								{
+									if( obj.options[i].value == data[2] )
+									{
+										document.getElementById("CurrentSupply").selectedIndex =i;
+										document.getElementById("CurrentSupply1").selectedIndex =i;
+										document.getElementById("CurrentSupply2").selectedIndex =i;
+										document.getElementById("CurrentSupply3").selectedIndex =i;
+										break;
+									}
+								}
+							}
+						}
+						if(data[6] != null && data[6] != "0"){
+							setTimeoutPause(1);
+							alert("PS report error. " + data[6]);
+							setTimeoutPause(0);
+							update_setting();
+						}
+						Settingdisable();
+
+					}else if(!notRespondMessViewed && countAliveFail > 4){
+						notRespondMessViewed = true;
+						alert("The server is not responding. The page may work not correctly. Please close this page.");
+						window.close();
+					}else{
+						countAliveFail++;
+					}
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				ProlongAliveTimeObj = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				ProlongAliveTimeObj = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(ProlongAliveTimeObj)
+			{
+				ProlongAliveTimeObj.open("GET", "/ProlongAliveTime?ses=" + window.name + "&value="+ LanTimeOut +"&id=" + Math.random(), true);
+				ProlongAliveTimeObj.onreadystatechange = ProlongAliveTimeComplete;
+				ProlongAliveTimeObj.send(null);
+				window.setTimeout("ProlongAliveTime()", AliveTimeLeft);
+			}
+		}
+		var tabberOptions = {
+			'manualStartup':true,
+
+			'onLoad': function(argsObj) {
+				if (argsObj.tabber.id == 'tab1') {
+
+				}
+			},
+			'onClick': function(argsObj) {
+
+				var t = argsObj.tabber;
+				var id = t.id;
+				var i = argsObj.index;
+				var e = argsObj.event;
+				CurrTab = i;
+				if (id == 'tab1') {
+				}
+				if( i == 3 || i == 2)
+				{
+					dcDataReqPause = true;
+					dcDataReqPauseOnPage = true;
+				}
+				else if( i == 0 )
+				{
+					requestedDataType = "1";
+					dcDataReqPause = false;
+					dcDataReqPauseOnPage = false;
+				}
+				else if( i == 1 )
+				{
+					requestedDataType = "2";
+					dcDataReqPause = false;
+					dcDataReqPauseOnPage = false;
+				}
+				if( i = 1)
+				{
+					pausecomp( 200 );
+					FoldbackProtection_Get();
+					StartType_Get();
+				}
+			},
+			'addLinkId': true
+
+		};
+
+		function numbersonly(myfield, e, dec)
+		{
+			var key;
+			var keychar;
+			if (window.event)
+				key = window.event.keyCode;
+			else if (e)
+				key = e.which;
+			else
+				return true;
+
+			keychar = String.fromCharCode(key);
+			if ((key==null) || (key==0) || (key==8) || (key==9) || (key==13) || (key==27))
+				return true;
+			else if ((("0123456789.").indexOf(keychar) > -1))
+				return true;
+			else
+				return false;
+		}
+
+		function lengthRestriction(elem, min, max)
+		{
+			var uInput = elem.value;
+			if(uInput >= min && uInput <= max)
+			{
+				return true;
+			}else
+			{
+				setTimeoutPause(1);
+				alert("Please enter between " +min+ " and " +max+ " value");
+				setTimeoutPause(0);
+				elem.focus();
+				return false;
+			}
+		}
+
+		function modify_settings()
+		{
+			var SetPws = false;
+
+			var NewVoltageText = document.getElementById("newvoltagetxt").value;
+			var NewCurrentText = document.getElementById("newcurrenttxt").value;
+			var out_on = document.getElementById("out_on").checked;
+			var out_off = document.getElementById("out_off").checked;
+			function ServAnsverPars_Complete()
+			{
+				if(SetPws.readyState == 4)
+				{
+					if(SetPws.status == 200)
+					{
+						if(SetPws.responseText == '0')
+						{
+							setTimeoutPause(1);
+							alert("Command error. Request was not processed successfully. Please refresh this page.");
+							setTimeoutPause(0);
+						}
+					}
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				SetPws = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				SetPws = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if( SetPws )
+			{
+				var outp;
+				if(out_on == true)
+				{
+					outp="1";
+				}
+				if(out_off == true)
+				{
+					outp="0";
+				}
+				SetPws.open("GET", "/SetVoltCurrOut?ses=" + window.name + "&value=" + NewVoltageText +","+ NewCurrentText+"," + outp +"&id=" + Math.random(), true);
+				SetPws.onreadystatechange = ServAnsverPars_Complete;
+				SetPws.send(null);
+			}
+		}
+
+		function ovp_Set()
+		{
+			var req = false;
+			var NewOVPText = document.getElementById("newovptxt");
+			var SetOvpVal = document.getElementById("SetOvpValue").checked;
+			function ServAnsverPars_Complete()
+			{
+				if(req.readyState == 4 && req.status == 200)
+				{
+					if(req.responseText == '0')
+					{
+						setTimeoutPause(1);
+						alert("Command error. Request was not processed successfully!");
+						setTimeoutPause(0);
+					}
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				req = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(req)
+			{
+				if(SetOvpVal)
+				{
+					if(NewOVPText.value != "")
+					{
+						req.open("GET", "/ovp_txt?ses=" + window.name + "&value=" + NewOVPText.value + "&id=" + Math.random(), true);
+						req.onreadystatechange = ServAnsverPars_Complete;
+						req.send(null);
+						document.getElementById("newovptxt").value = "";
+					}
+				}
+				else
+				{
+					req.open("GET", "/ovp_txt?ses=" + window.name + "&value=max&id=" + Math.random(), true);
+					req.onreadystatechange = ServAnsverPars_Complete;
+					req.send(null);
+				}
+			}
+		}
+
+		function uvp_Set()
+		{
+			var req = false;
+			var uvp = false;
+			var NewUVPText = document.getElementById("newuvptxt");
+			var SetUvpVal = document.getElementById("SetUvpValue").checked;
+
+			if(window.XMLHttpRequest)
+			{
+				req = new XMLHttpRequest();
+				uvp = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+				uvp = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(req)
+			{
+				if(SetUvpVal)
+				{
+					if(NewUVPText.value != "")
+					{
+						req.open("GET", "/uvp_txt?ses=" + window.name + "&value=" + NewUVPText.value + "&id=" + Math.random(), true);
+						req.send(null);
+						document.getElementById("newuvptxt").value = "";
+					}
+				}
+				else
+				{
+					req.open("GET", "/uvp_txt?ses=" + window.name + "&value=zero&id=" + Math.random(), true);
+					req.send(null);
+				}
+			}
+		}
+
+		function FoldbackProtection_Set()
+		{
+			var req = false;
+			var FP_Val = false;
+			var FP_OnOff_Val = document.getElementById("FP_ON").checked;
+
+			if(window.XMLHttpRequest)
+			{
+				req = new XMLHttpRequest();
+				FP_Val = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+				FP_Val = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(req)
+			{
+				if(FP_OnOff_Val)
+				{
+					req.open("GET", "/set_foldback?ses=" + window.name + "&value=1&id=" + Math.random(), true);
+					req.send(null);
+				}
+				else
+				{
+					req.open("GET", "/set_foldback?ses=" + window.name + "&value=0&id=" + Math.random(), true);
+					req.send(null);
+				}
+			}
+		}
+
+		function StartType_Set()
+		{
+			var req = false;
+			var sStart = document.getElementById("Safe_Start").checked;
+
+			function StartType_Complete()
+			{
+				if(req.readyState == 4 && req.status == 200)
+				{
+					if(req.responseText == '0')
+					{
+						setTimeoutPause(1);
+						alert("Command error. Request was not processed successfully!");
+						setTimeoutPause(0);
+					}
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				req = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(req)
+			{
+				if(sStart)
+				{
+					req.open("GET", "/StartTypeSet?ses=" + window.name + "&value=0&id=" + Math.random(), true);
+					req.onreadystatechange = StartType_Complete;
+					req.send(null);
+				}
+				else
+				{
+					req.open("GET", "/StartTypeSet?ses=" + window.name + "&value=1&id=" + Math.random(), true);
+					req.onreadystatechange = StartType_Complete;
+					req.send(null);
+				}
+			}
+		}
+
+		function ResetDCPowerOne()
+		{
+			var req = false;
+
+			if(window.XMLHttpRequest)
+			{
+				req = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(req)
+			{
+				req.open("GET", "/reset_DCPower?ses=" + window.name + "&value=one&id=" + Math.random(), true);
+				req.send(null);
+			}
+		}
+
+		function ResetDCPowerAll()
+		{
+			var req = false;
+
+			if(window.XMLHttpRequest)
+			{
+				req = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(req)
+			{
+				req.open("GET", "/reset_DCPower?ses=" + window.name + "&value=all&id=" + Math.random(), true);
+				req.send(null);
+			}
+		}
+
+		function SaveSettings()
+		{
+			var req = false;
+
+			if(window.XMLHttpRequest)
+			{
+				req = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(req)
+			{
+				req.open("GET", "/SetOperation?ses=" + window.name + "&value=1&id=" + Math.random(), true);
+				req.send(null);
+			}
+		}
+
+		function RecallSettings()
+		{
+			var req = false;
+
+			if(window.XMLHttpRequest)
+			{
+				req = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(req)
+			{
+				req.open("GET", "/SetOperation?ses=" + window.name + "&value=2&id=" + Math.random(), true);
+				req.send(null);
+			}
+		}
+		function SendAndRead()
+		{
+			var req = false;
+			var SendText = document.getElementById("sendtxt").value;
+			function readComplete()
+			{
+				dcDataReqPause = dcDataReqPauseOnPage;
+				if(req.readyState == 4 && req.status == 200)
+				{
+					if(req.responseText == '3' )
+					{
+						window.setTimeout("SendAndRead()", 150);
+					}
+					else if(req.responseText == '1' )
+					{
+						window.setTimeout("readcmd()", 400);
+						dcDataReqPause = true;
+					}else{
+						document.getElementById('readerrors').disabled = false;
+						document.getElementById('sendandread').disabled = false;
+					}
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				req = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(req)
+			{
+				if(SendText != "")
+				{
+					dcDataReqPause = true;
+					req.open("GET", "/send_txt?ses=" + window.name + "&value=" + SendText + "&id=" + Math.random(), true);
+					req.onreadystatechange = readComplete;
+					req.send(null);
+					document.getElementById('sendandread').disabled = true;
+					document.getElementById('readerrors').disabled = true;
+					document.getElementById("readtxt").value = "";
+					var tstStr = SendText.toUpperCase();
+					if(tstStr.search("SYST")!= -1 && tstStr.search("COMM")!= -1 && tstStr.search("LAN:RES")!= -1 )
+					{
+						alert("Server does reset. The page may not work correctly. Please close or refresh this page.");
+						logout();
+						window.close();
+					}
+				}
+			}
+		}
+		function readcmd()
+		{
+			var sar = false;
+			function readComplete()
+			{
+				document.getElementById('readerrors').disabled = false;
+				document.getElementById('sendandread').disabled = false;
+				dcDataReqPause = dcDataReqPauseOnPage;
+				if(sar.readyState == 4 && sar.status == 200)
+				{
+					document.getElementById("readtxt").value = sar.responseText;
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				sar = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				sar = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+
+			if(sar)
+			{
+				sar.open("GET", "/command_request?ses=" + window.name + "&id=" + Math.random(), true);
+				sar.onreadystatechange = readComplete;
+				sar.send(null);
+			}
+		}
+		function update_setting()
+		{
+			document.setting.cancel_set.disabled = true;
+			oneTimeVoltCurrUpdate = 1;
+		}
+		function SystemErrorsGet()
+		{
+			var syserr = false;
+			document.getElementById("systemerrorstxt").value ="";
+			function SystemErrorsReqComplete()
+			{
+				dcDataReqPause = dcDataReqPauseOnPage;
+				if(syserr.readyState == 4 && syserr.status == 200)
+				{
+					if( syserr.responseText != 'E')
+					{
+						document.getElementById("systemerrorstxt").value = syserr.responseText;
+					}
+					else
+					{
+						document.getElementById("systemerrorstxt").value = "\r\n";
+					}
+				}
+				document.getElementById('readerrors').disabled = false;
+				document.getElementById('sendandread').disabled = false;
+			}
+
+			if(window.XMLHttpRequest)
+			{
+				syserr = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				syserr = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(syserr)
+			{
+				dcDataReqPause = true;
+				document.getElementById('readerrors').disabled = true;
+				document.getElementById('sendandread').disabled = true;
+				syserr.open("GET", "/SystemErrorsGet?ses=" + window.name + "&id=" + Math.random(), true);
+				syserr.onreadystatechange = SystemErrorsReqComplete;
+				syserr.send(null);
+			}
+		}
+
+		function Blink_Id()
+		{
+			var supply = false;
+			if(window.XMLHttpRequest)
+			{
+				supply = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				supply = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(supply)
+			{
+				supply.open("GET", "/Blink_id?ses=" + window.name + "&id=" + Math.random(), true);
+				supply.send(null);
+			}
+		}
+
+		function DcPowerDataGet()
+		{
+			var DcPower = false;
+			var i;
+			var obj = document.getElementById("CurrentSupply");
+			function DcPowerComplete()
+			{
+				if(DcPower.readyState == 4 && DcPower.status == 200 )
+				{
+					var data = DcPower.responseText.split("|");
+					if(data.length < 25)
+					{
+						return;
+					}
+					if(data[24].indexOf('DC') < 0)
+					{
+						return;
+					}
+					var canmod = document.getElementById("CanModify").checked;
+					var canmodFB = document.getElementById("CanModifyFB").checked;
+					var canmodAS = document.getElementById("CanModifyAS").checked;
+					if(data[23] == "1"){
+						alertOfChangeShown = 1;
+					}
+					if(data == false || data[0] == "ERR")
+					{
+						document.getElementById("voltagetxt").innerHTML = "Error";
+						document.getElementById("currenttxt").innerHTML = "&nbsp;";
+					}
+					if(alertOfChangeShown != 0)
+					{
+						document.getElementById("voltagetxt").innerHTML = "--";
+						document.getElementById("currenttxt").innerHTML = "--";
+						document.getElementById("voltled").className = "ledOff";
+						document.getElementById("currled").className = "ledOff";
+					}
+					else if(data[4] == "OFF")
+					{
+						document.getElementById("voltagetxt").innerHTML = "OFF";
+						document.getElementById("currenttxt").innerHTML = "&nbsp;";
+						document.getElementById("voltled").className = "ledOff";
+						document.getElementById("currled").className = "ledOff";
+					}
+					else if(data[4] == "ON")
+					{
+						document.getElementById("voltagetxt").innerHTML = " " + data[0] + " ";
+						document.getElementById("currenttxt").innerHTML = " " + data[1] + " ";
+						if( data[7] == "CV" )
+						{
+							document.getElementById("voltled").className = "ledOn";
+							document.getElementById("currled").className = "ledOff";
+						}
+						else if( data[7] == "CC" )
+						{
+							document.getElementById("currled").className = "ledOn";
+							document.getElementById("voltled").className = "ledOff";
+						}
+						else if( data[7] == "CP" )
+						{
+							document.getElementById("voltled").className = "ledOn";
+							document.getElementById("currled").className = "ledOn";
+						}
+					}
+					if(canmodFB == false ){
+						if(data[8] == "ON")
+						{
+							document.getElementById("FP_ON").checked = true;
+						}
+						else
+						{
+							document.getElementById("FP_OFF").checked = true;
+						}
+					}
+					if(canmod == false || oneTimeVoltCurrUpdate == 1)
+					{
+						if( IsLogin )
+							document.setting.cancel_set.disabled = false;
+						oneTimeVoltCurrUpdate = 0;
+						if(alertOfChangeShown != 0)
+						{
+							document.setting.newvoltagetxt.value = "--";
+							document.setting.newcurrenttxt.value = "--";
+						}else{
+							document.setting.newvoltagetxt.value = data[2];
+							document.setting.newcurrenttxt.value = data[3];
+						}
+						if(data[4] == "OFF")
+						{
+							document.getElementById("out_off").checked = true;
+						}
+						else
+						{
+							document.getElementById("out_on").checked = true;
+						}
+					}
+					if(alertOfChangeShown != 0)
+					{
+						document.getElementById("ovptxt").innerHTML = " -- ";
+						document.getElementById("uvptxt").innerHTML = " -- ";
+					}else{
+						document.getElementById("ovptxt").innerHTML = " " + data[5] + " ";
+						document.getElementById("uvptxt").innerHTML = " " + data[6] + " ";
+					}
+
+					if(canmodAS == false){
+						if(data[9] == "ON")
+						{
+							document.getElementById("Auto_Start").checked = true;
+						}
+						else
+						{
+							document.getElementById("Safe_Start").checked = true;
+						}
+					}
+					dcDataReqPeriod = parseInt( data[10] );
+					if(alertOfChangeShown == 0){
+						for(i=0;i<obj.length;i++)
+						{
+							if( obj.options[i].value == data[11] )
+							{
+								document.getElementById("CurrentSupply").selectedIndex =i;
+								document.getElementById("CurrentSupply1").selectedIndex =i;
+								document.getElementById("CurrentSupply2").selectedIndex =i;
+								document.getElementById("CurrentSupply3").selectedIndex =i;
+								break;
+							}
+						}
+					}
+					//if(data[13]=="1")
+					//	document.getElementById("sledUVP").className = "SignLedOn";
+					//else
+					//	document.getElementById("sledUVP").className = "SignLedOff";
+					if(data[14]=="1")
+						document.getElementById("sledENA").className = "SignLedOn";
+					else
+						document.getElementById("sledENA").className = "SignLedOff";
+					if(data[15]=="1")
+						document.getElementById("sledOFF").className = "SignLedOn";
+					else
+						document.getElementById("sledOFF").className = "SignLedOff";
+					if(data[16]=="1")
+						document.getElementById("sledSO").className = "SignLedOn";
+					else
+						document.getElementById("sledSO").className = "SignLedOff";
+					if(data[17]=="1")
+						document.getElementById("sledOVP").className = "SignLedOn";
+					else
+						document.getElementById("sledOVP").className = "SignLedOff";
+					if(data[18]=="1")
+						document.getElementById("sledFLD").className = "SignLedOn";
+					else
+						document.getElementById("sledFLD").className = "SignLedOff";
+					if(data[19]=="1")
+						document.getElementById("sledOTP").className = "SignLedOn";
+					else
+						document.getElementById("sledOTP").className = "SignLedOff";
+					if(data[20]=="1")
+						document.getElementById("sledAC").className = "SignLedOn";
+					else
+						document.getElementById("sledAC").className = "SignLedOff";
+
+					if(dcDataReqPeriod < 1000)
+						dcDataReqPeriod = 1000;
+					if(data[0] == "ERR")
+						dcDataReqPeriod = 10000;
+					if(parseInt(data[21]) > 40){
+						if(alertDone1 == 0){
+							setTimeoutPause(1);
+							alert("Power supply module isn't responding.");
+							setTimeoutPause(0);
+							alertDone1 = 1;
+						}
+					}else{
+						alertDone1 = 0;
+					}
+					if(parseInt(data[22]) > 25 && alertDone2 == 0 && firstProlongAliveSkipCount == 8){
+						setTimeoutPause(1);
+						alert("Incorrect request detected. Please, refresh the page.");
+						setTimeoutPause(0);
+						alertDone2 = 1;
+					}
+
+					connectTimeout = 0;
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				DcPower = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				DcPower = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(DcPower)
+			{
+				DcPower.open("GET", "/DcData_get?ses=" + window.name + "&value=" + requestedDataType + "&id=" + Math.random(), true);
+				DcPower.onreadystatechange = DcPowerComplete;
+				DcPower.send(null);
+			}
+		}
+		function Settingdisable()
+		{
+			if( IsLogin )
+			{
+				if(scanPsContinue)
+					return;
+				document.setting.Apply.disabled = false;
+				if(document.getElementById("CanModify").checked == true){
+					document.setting.out_on.disabled = false;
+					document.setting.out_off.disabled = false;
+					document.setting.newvoltagetxt.disabled = false;
+					document.setting.newcurrenttxt.disabled = false;
+				}else{
+					document.setting.out_on.disabled = true;
+					document.setting.out_off.disabled = true;
+					document.setting.newvoltagetxt.disabled = true;
+					document.setting.newcurrenttxt.disabled = true;
+				}
+				document.setting.cancel_set.disabled = false;
+				document.getElementById('applyovp').disabled = false;
+				document.getElementById('applyuvp').disabled = false;
+				document.getElementById('applyfb').disabled = false;
+				document.getElementById('applyst').disabled = false;
+				document.getElementById('resetoneinstrument').disabled = false;
+				document.getElementById('resetallinstrument').disabled = false;
+				document.getElementById('save').disabled = false;
+				document.getElementById('recall').disabled = false;
+				document.getElementById('sendandread').disabled = false;
+				document.getElementById('readerrors').disabled = false;
+				document.getElementById("CurrentSupply").disabled = false;
+				document.getElementById("CurrentSupply1").disabled = false;
+				document.getElementById("CurrentSupply2").disabled = false;
+				document.getElementById("CurrentSupply3").disabled = false;
+				if(previousIsLoggin == 0){
+					document.getElementById("refresh1").disabled = false;
+					document.getElementById("refresh2").disabled = false;
+					document.getElementById("refresh3").disabled = false;
+					document.getElementById("refresh4").disabled = false;
+				}
+				previousIsLoggin = 1;
+			}
+			else
+			{
+				document.setting.Apply.disabled = true;
+				document.setting.out_on.disabled = true;
+				document.setting.out_off.disabled = true;
+				document.setting.newvoltagetxt.disabled = true;
+				document.setting.newcurrenttxt.disabled = true;
+				document.setting.cancel_set.disabled = true;
+				document.getElementById('applyovp').disabled = true;
+				document.getElementById('applyuvp').disabled = true;
+				document.getElementById('applyfb').disabled = true;
+				document.getElementById('applyst').disabled = true;
+				document.getElementById('resetoneinstrument').disabled = true;
+				document.getElementById('resetallinstrument').disabled = true;
+				document.getElementById('save').disabled = true;
+				document.getElementById('recall').disabled = true;
+				document.getElementById('sendandread').disabled = true;
+				document.getElementById('readerrors').disabled = true;
+				document.getElementById("CurrentSupply").disabled = true;
+				document.getElementById("CurrentSupply1").disabled = true;
+				document.getElementById("CurrentSupply2").disabled = true;
+				document.getElementById("CurrentSupply3").disabled = true;
+				document.getElementById("refresh1").disabled = true;
+				document.getElementById("refresh2").disabled = true;
+				document.getElementById("refresh3").disabled = true;
+				document.getElementById("refresh4").disabled = true;
+				previousIsLoggin = 0;
+			}
+		}
+
+
+
+		function FoldbackProtection_Get()
+		{
+			var FP_Val = false;
+			function FP_Complete()
+			{
+				if(FP_Val.readyState == 4 && FP_Val.status == 200)
+				{
+					if(FP_Val.responseText == '1')
+					{
+						window.setTimeout("FoldbackProtection_GetAns()",200);
+					}
+					else
+						dcDataReqPause = dcDataReqPauseOnPage;
+				}
+				else
+					dcDataReqPause = dcDataReqPauseOnPage;
+			}
+			if(window.XMLHttpRequest)
+			{
+				FP_Val = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				FP_Val = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(FP_Val)
+			{
+				dcDataReqPause = true;
+				FP_Val.open("GET", "/FP?ses=" + window.name  + "&value=1"  + "&id=" + Math.random(), true);
+				FP_Val.onreadystatechange = FP_Complete;
+				FP_Val.send(null);
+			}
+		}
+		function FoldbackProtection_GetAns()
+		{
+			var FP_ValA = false;
+			function FP_CompleteA()
+			{
+				dcDataReqPause = dcDataReqPauseOnPage;
+				if(FP_ValA.readyState == 4 && FP_ValA.status == 200)
+				{
+					if(FP_ValA.responseText == "ON")
+					{
+						document.getElementById("FP_ON").checked = true;
+					}
+					else if(FP_ValA.responseText == "OFF")
+					{
+						document.getElementById("FP_OFF").checked = true;
+					}
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				FP_ValA = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				FP_ValA = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(FP_ValA)
+			{
+				FP_ValA.open("GET", "/FP?ses=" + window.name + "&id=" + Math.random(), true);
+				FP_ValA.onreadystatechange = FP_CompleteA;
+				FP_ValA.send(null);
+			}
+		}
+
+		function StartType_Get()
+		{
+			var stg = false;
+			function StartTypeCompleteG()
+			{
+				if(stg.readyState == 4 && stg.status == 200)
+				{
+					if(stg.responseText == '1')
+					{
+						window.setTimeout("StartType_GetAns()",200);
+					}
+					else
+						dcDataReqPause = dcDataReqPauseOnPage;
+				}
+				else
+					dcDataReqPause = dcDataReqPauseOnPage;
+			}
+			if(window.XMLHttpRequest)
+			{
+				stg = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				stg = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(stg)
+			{
+				dcDataReqPause = true;
+				stg.open("GET", "/StartTypeGet?ses=" + window.name + "&value=1" + "&id=" + Math.random(), true);
+				stg.onreadystatechange = StartTypeCompleteG;
+				stg.send(null);
+			}
+		}
+		function StartType_GetAns()
+		{
+			var st = false;
+			function StartTypeComplete()
+			{
+				dcDataReqPause = dcDataReqPauseOnPage;
+				if(st.readyState == 4 && st.status == 200)
+				{
+					if(st.responseText == "OFF")
+					{
+						document.getElementById("Safe_Start").checked = true;
+					}
+					else if(st.responseText == "ON")
+					{
+						document.getElementById("Auto_Start").checked = true;
+					}
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				st = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				st = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(st)
+			{
+				st.open("GET", "/StartTypeGet?ses=" + window.name + "&id=" + Math.random(), true);
+				st.onreadystatechange = StartTypeComplete;
+				st.send(null);
+			}
+		}
+
+		window.onload = function()
+		{
+			loadPage();
+		}
+
+		function loadPage()
+		{
+			if( window.name == "")
+			{
+				var aaa  = 1+ Math.floor(Math.random()* 255);
+				window.name = aaa.toString();
+			}
+
+			OpenPages ++;
+			voltCurrView = 0;
+			login('hide');
+			dcDataReqPause = false;
+			dcDataReqPauseOnPage = false;
+			requestedDataType = "1";
+
+			TimeOutGet();
+			//SystemErrorsGet();
+			setProlongAlive(1);
+			//window.setTimeout("StartType_Get()",100);
+			//window.setTimeout("FoldbackProtection_Get()",200);
+			window.setTimeout("Settingdisable()",300);
+			window.setTimeout("checkLoginGet()",400);
+			//window.setTimeout("GetConnectedPs()",500);
+			window.setTimeout("get_vals()", 2200);
+		}
+
+		function get_vals()
+		{
+			if(!dcDataReqPause){
+				DcPowerDataGet();
+			}
+			Settingdisable();
+			window.setTimeout("get_vals()", dcDataReqPeriod);
+		}
+
+		function scanPs( ConnectedPs )
+		{
+			var i = 0;
+			var count = 0;
+			RemoveOptions( document.getElementById("CurrentSupply"));
+			RemoveOptions( document.getElementById("CurrentSupply1"));
+			RemoveOptions( document.getElementById("CurrentSupply2"));
+			RemoveOptions( document.getElementById("CurrentSupply3"));
+			for( i = 0; i < 31; i++ )
+			{
+				if( (ConnectedPs & (0x00000001 << i)) != 0)
+				{
+					document.getElementById("CurrentSupply").options[count]=new Option(" "+i, i);
+					document.getElementById("CurrentSupply1").options[count]=new Option(" "+i, i);
+					document.getElementById("CurrentSupply2").options[count]=new Option(" "+i, i);
+					document.getElementById("CurrentSupply3").options[count]=new Option(" "+i, i);
+					count = count + 1;
+				}
+			}
+			SelectMaserPs();
+		}
+
+		function GetConnectedPs()
+		{
+			var psget = false;
+			function funComplete()
+			{
+				dcDataReqPause = dcDataReqPauseOnPage;
+				scanPsContinue = false;
+				if(psget.readyState == 4 && psget.status == 200)
+				{
+					if( psget.responseText == '0')
+					{
+						dcDataReqPause = true;
+						scanPsContinue = true;
+						window.setTimeout("GetConnectedPs()", 300);//
+					}
+					else
+					{
+						dcDataReqPause = true;
+						scanPsContinue = true;
+						window.setTimeout("getPs()", 4000);//
+					}
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				psget = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				psget = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(psget)
+			{
+				document.getElementById("refresh1").disabled = true;
+				document.getElementById("refresh2").disabled = true;
+				document.getElementById("refresh3").disabled = true;
+				document.getElementById("refresh4").disabled = true;
+				dcDataReqPause = true;
+				scanPsContinue = true;
+				psget.open("GET", "/GetConnectedPs?ses=" + window.name + "&id=" + Math.random(), true);
+				psget.onreadystatechange = funComplete;
+				psget.send(null);
+			}
+		}
+
+		function getPs()
+		{
+			var psget = false;
+			function uvpComplete()
+			{
+				document.getElementById("refresh1").disabled = false;
+				document.getElementById("refresh2").disabled = false;
+				document.getElementById("refresh3").disabled = false;
+				document.getElementById("refresh4").disabled = false;
+				scanPsContinue = false;
+				if(psget.readyState == 4 && psget.status == 200 )
+				{
+					PS_BitMap = parseInt( psget.responseText);
+					scanPs( parseInt( psget.responseText) );
+					alertOfChangeShown = 0;
+					alertOfChangeShownDone = 0;
+				}
+				dcDataReqPause = dcDataReqPauseOnPage;
+			}
+			if(window.XMLHttpRequest)
+			{
+				psget = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				psget = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(psget)
+			{
+				psget.open("GET", "/GetPsconn?ses=" + window.name + "&id=" + Math.random(), true);
+				psget.onreadystatechange = uvpComplete;
+				psget.send(null);
+			}
+		}
+
+		function RemoveOptions( obj )
+		{
+			var i;
+			for (i = obj.length - 1; i>=0; i--)
+			{
+				obj.remove(i);
+			}
+		}
+
+		function SelectPs( obj )
+		{
+			var ps = obj.options[ obj.selectedIndex ].value;
+			var pssel = false;
+			if(!IsLogin)
+				return;
+			function selComplete()
+			{
+				dcDataReqPause = dcDataReqPauseOnPage;
+				if(pssel.readyState == 4 && pssel.status == 200 && pssel.responseText != '0')
+				{
+					window.setTimeout("SelectMaserPs()", 100);//
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				pssel = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				pssel = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(pssel)
+			{
+				dcDataReqPause = true;
+				pssel.open("GET", "/SelectPS?ses=" + window.name + "&value="+ ps + "&id=" + Math.random(), true);
+				pssel.onreadystatechange = selComplete;
+				pssel.send(null);
+			}
+		}
+
+		function SelectMaserPs()
+		{
+			var getmaster = false;
+			var i = 0;
+			var obj = document.getElementById("CurrentSupply");
+
+			function getmasterComplete()
+			{
+				if(getmaster.readyState == 4 && getmaster.status == 200)
+				{
+					//window.setTimeout("StartType_Get()",150);
+					//window.setTimeout("FoldbackProtection_Get()",250);
+					for(i=0;i<obj.length;i++)
+					{
+						if( obj.options[i].value == getmaster.responseText )
+						{
+							document.getElementById("CurrentSupply").selectedIndex =i;
+							document.getElementById("CurrentSupply1").selectedIndex =i;
+							document.getElementById("CurrentSupply2").selectedIndex =i;
+							document.getElementById("CurrentSupply3").selectedIndex =i;
+							break;
+						}
+					}
+				}
+			}
+			if(window.XMLHttpRequest)
+			{
+				getmaster = new XMLHttpRequest();
+			}
+			else if(window.ActiveXObject)
+			{
+				getmaster = new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			if(getmaster)
+			{
+				getmaster.open("GET", "/GetMaster?ses=" + window.name + "&id=" + Math.random(), true);
+				getmaster.onreadystatechange = getmasterComplete;
+				getmaster.send(null);
+			}
+		}
+
+		var myEventSent = 0;
+		window.onbeforeunload = function()
+		{
+			if(myEventSent == 0){
+				SetPsData("CLOSE");
+				setProlongAlive(1);
+				myEventSent = 1;
+			}
+		}
+		window.onunload = function()
+		{
+			if(myEventSent == 0){
+				SetPsData("CLOSE");
+				setProlongAlive(1);
+				myEventSent = 1;
+			}
+		}
+		var myEvent = window.attachEvent || window.addEventListener;
+		var chkevent = window.attachEvent ? 'onbeforeunload' : 'beforeunload'; /// make IE7, IE8 compitable
+		myEvent(chkevent, function(e) { // For >=IE7, Chrome, Firefox
+			if(myEventSent == 0){
+				SetPsData("CLOSE");
+				setProlongAlive(1);
+				myEventSent = 1;
+			}
+		});
+
+	</script>
+	<style type="text/css">
+		.menutitle{
+			cursor:pointer;
+			margin-bottom: 5px;
+			background-color:#ECECFF;
+			color:#000000;
+			width:140px;
+			height:40;
+			padding:2px;
+			text-align:center;
+			font-weight:bold;
+			/*/*/border:1px solid #000000;/* */
+		}
+		.menutitleSelected{
+			cursor:pointer;
+			margin-bottom: 5px;
+			background-color:#669999;
+			color:#000000;
+			width:140px;
+			height:40;
+			padding:2px;
+			text-align:center;
+			font-weight:bold;
+			/*/*/border:1px solid #000000;/* */
+		}
+		.submenu{
+			margin-bottom: 0.5em;
+		}
+
+		.log{
+			cursor:pointer;
+			margin-bottom: 5px;
+			background-color:#ECECFF;
+			color:#000000;
+			width:100px;
+			height:20;
+			padding:2px;
+			text-align:center;
+			font-weight:bold;
+			/*/*/border:1px solid #000000;/* */
+		}
+	</style>
+
+	<style type="text/css">
+		P {
+			font-family: Verdana, Arial, Helvetica, sans-serif;
+			font-size: 18pt;
+			font-style: bold;
+			color:#99FF33;
+			background-color:BLACK;
+			text-align:center;
+		}
+		.Pte {
+			font-family: Verdana, Arial, Helvetica, sans-serif;
+			font-size: 18pt;
+			font-style: bold;
+		//color:#99FF33;
+		//background-color:BLACK;
+		//text-align:center;
+		}
+		modtxt{
+			font-family: Verdana, Arial, Helvetica, sans-serif;
+			font-size: 8pt;
+			font-style: normal;
+			color:Black;
+			text-align:center;
+		}
+		.loginout{
+			background-color:#D0DCDC;
+			color:#000000;
+			width:140px;
+			text-align:center;
+			/*/*/border:1px solid #000000;/* */
+		}
+		.ledOn {
+			width: 16px;
+			background: #0F0;
+			padding: 1px;
+			padding-right: 2px;
+			border: solid 2px black;
+			float: right;
+		}
+		.ledOff {
+			width: 16px;
+			background: #555;
+			padding: 1px;
+			padding-right: 2px;
+			border: solid 2px black;
+			float: right;
+		}
+		.SignLedOn {
+			width: 56px;
+			background: #F00;
+			padding: 1px;
+		//padding-right: 2px;
+			border: solid 2px black;
+			display: inline;
+			float: left;
+		}
+		.SignLedOff {
+			width: 56px;
+			background: #FFF;
+			padding: 1px;
+		//padding-right: 5px;
+			border: solid 2px black;
+			display: inline;
+			float: left;
+		}
+
+		#tab1 {
+
+		}
+	</style>
+</head>
+
+<body onmousemove=" LanTimeOut = RecTimeOut;">
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+	<tr>
+		<td align="left"  valign="middle" width="100">
+		<td align="center" valign="middle"><img src="./images/Banner.gif" alt="TDK-Lambda Logo"></td>
+	</tr>
+</table>
+
+<table width="100%">
+	<tbody>
+	<tr>
+		<td align="right" valign="top" width="25%"><br>
+			<div id="masterdiv">
+				<div onclick="location='/'" class="menutitle" > Home </div>
+				<div onclick="location='/dcpower'" class="menutitleSelected"> DC Power </div>
+				<div onclick="location='/lan'" class="menutitle"> LAN </div>
+				<div onclick="location='/help'" class="menutitle"> Help </div>
+			</div>
+
+			<div id="popupbox" class="loginout">
+				<form name="login" action="" method="post">
+					Username: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <br>
+					<input name="username" id="username" size="14" maxlength="8" align="left"> &nbsp; &nbsp; &nbsp; <br>
+					Password: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <br>
+					<input name="userpass" id="userpass" type="password" size="14" maxlength="16" onkeyup="if (event.keyCode == 13){loginUser();}" > &nbsp; &nbsp; &nbsp; <br><br>
+					<input type="button" name="cancel" value="Cancel" onclick="hidelogin()" > &nbsp; <input type="button" name="submit" value=" Login " onclick="loginUser()"> &nbsp;
+				</form>
+			</div>
+		</td>
+		<td align="left" valign="top" width="50%">
+			<hr align="left" size="2" width="900">
+			<table cellspacing="30" cellpadding="0" width="900" bgcolor="669999">
+				<TR><TD>
+					<div>
+						<div class="tab active" onclick="showTab(0)">Output</div>
+						<div class="tab" onclick="showTab(1)">Protection</div>
+						<div class="tab" onclick="showTab(2)">System</div>
+						<div class="tab" onclick="showTab(3)">Utility</div>
+					</div>
+					<div class="tabber" id="tab1" style="display: block">
+						<div class="tabbertab tabbertabdefault tab-content active" title="Output" >
+							<h2>Output</h2>
+							<form name="setting" action="">
+								<table border="0" width="95%">
+									<tr>
+										<td width = "25%">&nbsp; &nbsp; &nbsp; <input id="Blink_Identify" value="Blink Identify" onclick="Blink_Id()" type="button" ></td>
+										<td width = "25%">Multi-drop Address</td>
+										<td width = "25%">
+											<!--					<select id="CurrentSupply" style="width : 200" onchange ="SelectPs(document.getElementById('CurrentSupply'));">-->
+											<!--					 <option></option>-->
+											<!--					</select>-->
+											<select id="CurrentSupply" style="width: 200px;" onchange="SelectPs(document.getElementById('CurrentSupply'));">
+												<option value="0">Power Supply 1</option>
+												<option value="1" selected>Power Supply 2</option>
+											</select>
+										</td>
+										<td width = "25%"><input id="refresh1" value="Refresh list" onclick="GetConnectedPs();" type="button"></td>
+									</tr>
+									<tr align="left" valign="top"><th>&nbsp; &nbsp; &nbsp; Measurement<td></td><td><b>&nbsp; &nbsp; &nbsp; </b></td><td></td></tr>
+									<tr><td>  <!--<input name="cvcc" type="radio" id="voltled" >-->
+										<div id="voltled" class="ledOff">&nbsp;</div>
+										&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Voltage CV</td>
+										<td>
+											<!--					<P id="voltagetxt"> &#45;&#45; </P>-->
+											<p id="voltagetxt">12.0 V</p>
+										</td>
+										<td><!--<input name="cvcc" type="radio" id="currled" >-->
+											<div id="currled" class="ledOff">&nbsp;</div>
+											&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Current CC</td>
+										<td>
+											<!--					<P id="currenttxt"> &#45;&#45; </P>-->
+											<p id="currenttxt">1.5 A</p>
+										</td>
+									</tr>
+									<tr bgcolor="669999"><td></td><td></td><td></td><td></td></tr>
+									<tr align="left" valign="top">
+										<th>&nbsp; &nbsp; &nbsp; Settings
+										<td></td>
+										<td></td>
+										<td align="right"> </td>
+									</tr>
+									<tr>
+										<td>&nbsp; &nbsp; &nbsp;  Check To Modify  <input type="checkbox" id="CanModify" ></td>
+										<td align="center">Output</td>
+										<td></td>
+										<td></td>
+									</tr>
+									<tr>
+										<td>&nbsp; &nbsp; &nbsp; <input id="Apply" value=" Apply " onclick="modify_settings()" type="button" ></td>
+										<td align="center"><input type="radio" name="OutPut"  id="out_on" > On </td>
+										<td>Voltage Limit</td>
+										<td>Current Limit</td>
+									</tr>
+									<tr>
+										<td>&nbsp; &nbsp; &nbsp; <input id="cancel_set" value="Refresh" onclick="update_setting()" type="button" ></td>
+										<td align="center"><input type="radio" name="OutPut"  id="out_off" > Off </td>
+										<td>
+											<!--							<input id="newvoltagetxt"-->
+											<!--									type="text" class="Pte" -->
+											<!--									style="width : 100"-->
+											<!--									onkeypress="return numbersonly(this, event)"-->
+											<!--									maxlength="15">Volts-->
+											<input id="newvoltagetxt" type="text" class="Pte" style="width: 100px;" onkeypress="return numbersonly(this, event)" maxlength="15" value="12.0">Volts
+										</td>
+										<td>
+											<!--							<input id="newcurrenttxt" -->
+											<!--									type="text" class="Pte" -->
+											<!--									style="width : 100"-->
+											<!--									onkeypress="return numbersonly(this, event)"-->
+											<!--									maxlength="15">Amps-->
+											<input id="newcurrenttxt" type="text" class="Pte" style="width: 100px;" onkeypress="return numbersonly(this, event)" maxlength="15" value="1.5">Amps
+										</td>
+									</tr>
+									<tr  bgcolor="669999"><td></td><td></td><td></td><td></td></tr>
+									<tr>
+										<th>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Faults<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+									</tr>
+									<tr>
+										<td></td>
+										<th colspan="3">
+											<div id="sledAC" align="center" class="SignLedOff">AC</div>
+											<div id="sledOTP" align="center" class="SignLedOff">OTP</div>
+											<div id="sledFLD" align="center" class="SignLedOff">FLD</div>
+											<div id="sledOVP" align="center" class="SignLedOff">OVP</div>
+											<div id="sledSO" align="center" class="SignLedOff">SO</div>
+											<div id="sledOFF" align="center" class="SignLedOff">OFF</div>
+											<div id="sledENA" align="center" class="SignLedOff">ENA</div>
+									</tr>
+								</table>
+							</form>
+						</div>
+
+						<div class="tabbertab tab-content" title="Protection" >
+							<h2>Protection</h2>
+							<table border="0" width="95%">
+								<tr>
+									<td width = "25%"></td>
+									<td width = "25%">Multi-drop Address</td>
+									<td width = "25%">
+										<select id="CurrentSupply1" style="width : 200" onchange ="SelectPs(document.getElementById('CurrentSupply1'));">
+											<option></option>
+										</select>
+									</td>
+									<td width = "25%"><input id="refresh2" value="Refresh list" onclick="GetConnectedPs();" type="button"></td>
+								</tr>
+								<tr align="left" valign="top" ><th  colspan="2" >&nbsp; &nbsp; &nbsp; Over-Voltage Protection<td></td><td></td></tr>
+								<tr><td>&nbsp; &nbsp; &nbsp; OVP Settings</td><td>New Setting</td><td></td></tr>
+								<tr><td>
+									<!--				<P id="ovptxt"> &#45;&#45; </P>-->
+									<p id="ovptxt">15.0 V</p>
+								</td><td>
+									<!--				<input id="newovptxt" type="text"  onkeypress="return numbersonly(this, event)"  maxlength="15">-->
+									<input id="newovptxt" type="text" onkeypress="return numbersonly(this, event)" maxlength="15" value="15.0">
+								</td>
+									<td><input type="radio" name="group1" value="radiobtn1" id="SetMaxValue" > Set to Maximum <br>
+										<input type="radio" name="group1" value="radiobtn2" id="SetOvpValue" checked> Set to value </td>
+									<td><input id="applyovp" value="Apply" onclick="ovp_Set()" type="button" ></td></tr>
+
+								<tr bgcolor="669999"><td></td><td></td><td></td><td></td></tr>
+
+								<tr align="left" valign="top" ><th  colspan="2" >&nbsp; &nbsp; &nbsp; Under-Voltage Limit<td></td><td></td></tr>
+								<tr><td>&nbsp; &nbsp; &nbsp; UVL Settings</td><td>New Setting</td><td></td></tr>
+								<tr><td>
+									<!--				<P id="uvptxt"> &#45;&#45; </P>-->
+									<p id="uvptxt">5.0 V</p>
+								</td><td>
+									<!--				<input id="newuvptxt" type="text"  onkeypress="return numbersonly(this, event)"  maxlength="15">-->
+									<input id="newuvptxt" type="text" onkeypress="return numbersonly(this, event)" maxlength="15" value="5.0">
+								</td>
+									<td><input type="radio" name="group2" value="radiobtn3" id="SetZero" > Set to Zero <br>
+										<input type="radio" name="group2" value="radiobtn4" id="SetUvpValue" checked> Set to value </td>
+									<td><input id="applyuvp" value="Apply" onclick="uvp_Set()" type="button" ></td></tr>
+
+								<tr bgcolor="669999"><td></td><td></td><td></td><td></td></tr>
+
+								<tr align="left" valign="top" ><th  colspan="2" >&nbsp; &nbsp; &nbsp; Foldback Protection<td></td><td></td></tr>
+								<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Check To Modify  <input type="checkbox" id="CanModifyFB" ></td><td></td><td></td></tr>
+								<tr><td></td><td></td>
+									<td><input type="radio" name="group3" value="radiobtn6" id="FP_ON" > Enable <br>
+										<input type="radio" name="group3" value="radiobtn7" id="FP_OFF"> Disable</td>
+									<td><input id="applyfb" value="Apply" onclick="FoldbackProtection_Set()" type="button" ></td></tr>
+
+								<tr bgcolor="669999"><td></td><td></td><td></td><td></td></tr>
+
+								<tr align="left" valign="top" ><th  colspan="2" >&nbsp; &nbsp; &nbsp; Auto Start Setting<td></td><td></td></tr>
+								<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Check To Modify  <input type="checkbox" id="CanModifyAS" ></td><td></td><td></td></tr>
+								<tr><td></td><td></td>
+									<td><input type="radio" name="group4" value="radiobtn8" id="Safe_Start" > Safe start <br>
+										<input type="radio" name="group4" value="radiobtn9" id="Auto_Start" > Auto start </td>
+									<td><input id="applyst" value="Apply" onclick="StartType_Set()" type="button" ></td></tr>
+
+
+							</table>
+						</div>
+
+						<div class="tabbertab tab-content" title="System">
+							<h2>System</h2>
+							<table border="0" width="95%">
+								<tr>
+									<td width="25%"></td>
+									<td width="25%">Multi-drop Address</td>
+									<td width = "25%">
+										<select id="CurrentSupply2" style="width : 200" onchange ="SelectPs(document.getElementById('CurrentSupply2'));">
+											<option></option>
+										</select>
+									</td>
+									<td width="25%"><input id="refresh3" value="Refresh list" onclick="GetConnectedPs();" type="button"></td>
+								</tr>
+								<tr align="left" valign="top" ><th  colspan="2" >&nbsp; &nbsp; &nbsp; Reset the DC Power<td></td><td></td></tr>
+								<tr><td colspan="3" align="right">&nbsp; &nbsp; &nbsp; Reset selected multi-drop instrument</td><td></td><td><input id="resetoneinstrument" value="Reset One Instrument" onclick="ResetDCPowerOne()" type="button"></td></tr>
+
+								<tr ><td></td><td></td><td></td><td></td></tr>
+
+								<tr><td colspan="3" align="right">&nbsp; &nbsp; &nbsp; Reset all instruments on this multi-drop bus</td><td></td><td><input id="resetallinstrument" value="Reset All Instruments" onclick="ResetDCPowerAll()" type="button"></td></tr>
+
+								<tr bgcolor="669999"><td></td><td></td><td></td><td></td></tr>
+
+								<tr align="left" valign="top" ><th  colspan="2" >&nbsp; &nbsp; &nbsp; Save / Recall Settings<td></td><td></td></tr>
+								<tr><td colspan="4">&nbsp; &nbsp; &nbsp; The saved settings are kept until the power supply is turned off</td></tr>
+								<tr><td>  </td>
+									<td><input id="save" value="Save" onclick="SaveSettings()" type="button"></td>
+									<td><input id="recall" value="Recall" onclick="RecallSettings()" type="button"></td>
+									<td></td></tr>
+
+							</table>
+						</div>
+
+						<div class="tabbertab tab-content" title="Utility">
+							<h2>Utility</h2>
+							<table border="0" width="95%">
+								<tr>
+									<td width="25%"></td>
+									<td width="25%">Multi-drop Address</td>
+									<td width = "25%">
+										<select id="CurrentSupply3" style="width : 200" onchange ="SelectPs(document.getElementById('CurrentSupply3'));">
+											<option></option>
+										</select>
+									</td>
+									<td width="25%"><input id="refresh4" value="Refresh list" onclick="GetConnectedPs();" type="button"></td>
+								</tr>
+								<tr align="left" valign="top" ><th  colspan="2" >&nbsp; &nbsp; &nbsp; Send SCPI Commands<td></td><td></td></tr>
+								<tr><td colspan="2"><input id="sendtxt" type="text" style="width : 100%"></td><td align="left" valign="top"><input id="sendandread" value="Send and Read" onclick="SendAndRead()" type="button"></td><td></td></tr>
+								<tr><td colspan="2"> <textarea style="width : 100%" rows= "4" cols="1" id="readtxt" ></textarea> </td><td></td><td></td></tr>
+
+								<tr align="left" valign="top" ><th  colspan="2" >&nbsp; &nbsp; &nbsp; Read System Errors<td></td><td></td></tr>
+								<tr><td colspan="2"> <textarea style="width : 100%" cols="1" rows= "4"  id="systemerrorstxt" ></textarea> </td><td align="left" valign="top"><input id="readerrors" value="Read Errors" onclick="SystemErrorsGet()" type="button"></td><td></td></tr>
+							</table>
+						</div>
+					</div>
+				</TD></TR>
+			</TABLE>
+
+			<script type="text/javascript">
+
+				tabberAutomatic(tabberOptions);
+
+			</script>
+
+			<!--tr valign="top" > <td width="25%"></td><td align="left" width="50%" --> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+			&nbsp; &nbsp; &nbsp; &nbsp;
+			&copy; Copyright TDK-Lambda 2018<!--/td></tr-->
+
+	</tbody>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+	<tbody>
+	<tr>
+		<td align="center" valign="middle">
+			<h1><br>
+			</h1>
+		</td>
+
+	</tr>
+	</tbody>
+</table>
+</body></html>

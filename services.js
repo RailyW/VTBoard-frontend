@@ -1,11 +1,4 @@
-function showPage (index) {
-    const pageList = document.querySelectorAll('.page');
-    pageList.forEach(page => page.classList.remove('active'));
-    const pageBtnList = document.querySelectorAll('.page_btn');
-    pageBtnList.forEach(page => page.classList.remove('active'));
-    pageBtnList[index].classList.add('active');
-    pageList[index].classList.add('active');
-}
+let cleanupFunction = null;
 
 function loadPage(pageIndex) {
     const pageArea = document.getElementById("page_area");
@@ -13,16 +6,38 @@ function loadPage(pageIndex) {
 
     // 根据页面索引加载对应的 HTML 文件
     const pages = [
-        '/pages/page_1/index.html',
-        '/pages/page_2/index.html',
-        '/pages/page_3/index.html',
-        '/pages/page_4/index.html',
+        '/pages/Home.html',
+        '/pages/DCPower.html',
+        '/pages/LAN.html',
+        '/pages/Help.html',
     ];
+
+    if (cleanupFunction) {
+        cleanupFunction();
+        cleanupFunction = null;
+    }
+
     fetch(pages[pageIndex])
         .then(response => response.text())
         .then(data => {
             pageArea.innerHTML = data; // 加载 HTML 内容
             updateActiveTab(pageIndex); // 更新按钮的激活状态
+
+            const existScript = document.getElementById('page_script');
+            if (existScript) {
+                existScript.remove();
+            }
+            const scripts = pageArea.querySelectorAll('script');
+            scripts.forEach((script) => {
+                const newScript = document.createElement('script');
+                newScript.textContent = script.textContent;
+                newScript.id = 'page_script';
+                document.body.appendChild(newScript);
+                script.remove();
+            });
+            if (typeof window.setupPageCleanup === 'function') {
+                cleanupFunction = window.setupPageCleanup;
+            }
         })
         .catch(error => console.error('加载页面失败:', error));
 }
@@ -39,7 +54,7 @@ function updateActiveTab(pageIndex) {
     });
 }
 
-// 初次加载页面 1
+// 初次加载页面
 window.onload = function() {
-    loadPage(0); // 默认加载第一页
+    loadPage(0);
 }

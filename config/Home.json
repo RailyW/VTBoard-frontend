@@ -1,0 +1,24 @@
+{
+  "welcome": {
+    "system_model": "Shimokitazawa",
+    "system_manufacturer": "Tadokoro",
+    "serial_number": "114514",
+    "max_output": "1919810",
+    "firmware": "GG",
+    "multi_drop_addr": "nope"
+  },
+  "LAN": {
+    "system_ip": "192.168.1.1",
+    "system_mac": "0:0:0:0",
+    "system_hostname": "root",
+    "lxi_version": "1.1.4",
+    "auto_mdix": "5.1.4",
+    "auto_negotiate": "not auto select",
+    "multicast_dns": "8.8.8.8"
+  },
+  "VISA": {
+    "description": "this is bad",
+    "vname_ip": "192.168.1.2",
+    "vname_host": "rooooooooooot"
+  }
+}

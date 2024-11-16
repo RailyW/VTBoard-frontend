@@ -1,0 +1,549 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+	<style type="text/css">
+		.tab-content {
+			display: none;
+		}
+		.tab-content.active {
+			display: block;
+		}
+		.tab {
+			cursor: pointer;
+			padding: 10px;
+			background-color: #ECECFF;
+			color: #000;
+			font-weight: bold;
+			display: inline-block;
+			margin-right: 5px;
+		}
+		.tab.active {
+			background-color: #669999;
+			color: #FFF;
+		}
+	</style>
+	<script type="text/javascript">
+		function showTab(index) {
+			var tabs = document.getElementsByClassName('tab');
+			var contents = document.getElementsByClassName('tab-content');
+
+			for (var i = 0; i < tabs.length; i++) {
+				tabs[i].classList.remove('active');
+				contents[i].classList.remove('active');
+			}
+
+			tabs[index].classList.add('active');
+			contents[index].classList.add('active');
+		}
+
+		window.onload = function() {
+			showTab(0); // ???????tab
+		};
+	</script>
+<meta http-equiv="content-type" content="text/html;charset=ISO-8859-4"><title>Lambda - LAN</title>
+
+<link rel="stylesheet" href="example.css" TYPE="text/css" MEDIA="screen">
+<script type="text/javascript" src="tabber.js"></script>
+<script type="text/javascript">
+
+
+
+document.write('<style type="text/css">.tabber{display:none;}<\/style>');
+
+var AliveTimeLeft = 2000;
+var AliveTimeCharged = 0;
+var connectTimeoutTab = 0;
+var connectTimeoutIter;
+var iterationCheckCount = 0;
+var countAliveFail = 0;
+
+
+function setProlongAlive( iter )
+{
+	connectTimeoutIter = iter;
+	if(AliveTimeCharged == 0){
+		window.setTimeout("ProlongAliveTime()", AliveTimeLeft);
+		AliveTimeCharged = 1;
+	}
+}
+
+function ProlongAliveTime()
+{
+	var ProlongAliveTimeObj = false;
+
+	function ProlongAliveTimeComplete()
+	{
+		if(ProlongAliveTimeObj.readyState == 4)
+		{
+			if(ProlongAliveTimeObj.status == 200 )
+			{
+				var data = ProlongAliveTimeObj.responseText.split("|");
+				//AliveTimeLeft = parseInt( data[0] );
+				//if(AliveTimeLeft < 2000 || AliveTimeLeft > 10000)
+				//{
+				//	AliveTimeLeft = 2000;
+				//}
+				
+				if( IsLogin && data[1] != '1' && ++iterationCheckCount > 2){
+					setTimeoutPause(1);
+					if(reportConnLoggOut==0){
+						alert("Your connection is logged out.");
+						reportConnLoggOut = 1;
+					}
+					setTimeoutPause(0);
+					checkLoginGet();
+				}else{
+					if( !IsLogin || (IsLogin && data[1] == '1'))
+						iterationCheckCount = 0;
+				}
+				notRespondMessViewed = false;
+				countAliveFail = 0;
+			}else if(!notRespondMessViewed && countAliveFail > 4){
+				notRespondMessViewed = true;
+				alert("The server is not responding. The page may not work correctly. Please close this page.");
+				window.close();	
+			}else{
+				countAliveFail++;
+			}
+			loginUserStartCheck();
+		}
+	}
+	if(window.XMLHttpRequest)
+	{
+		ProlongAliveTimeObj = new XMLHttpRequest();
+	}
+	else if(window.ActiveXObject)
+	{
+		ProlongAliveTimeObj = new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	if(ProlongAliveTimeObj)
+	{
+		ProlongAliveTimeObj.open("GET", "/ProlongAliveTime?ses=" + window.name + "&value="+ LanTimeOut +"&id=" + Math.random(), true);
+		ProlongAliveTimeObj.onreadystatechange = ProlongAliveTimeComplete;
+		ProlongAliveTimeObj.send(null);
+		window.setTimeout("ProlongAliveTime()", AliveTimeLeft);
+	}
+}
+var tabberOptions = {
+  'manualStartup':true,
+  'onLoad': function(argsObj) {
+    if (argsObj.tabber.id == 'tab1') {
+    }
+  },
+
+  'onClick': function(argsObj) {
+
+    var t = argsObj.tabber; 
+    var id = t.id; 
+    var i = argsObj.index;
+    var e = argsObj.event; 
+    if (id == 'tab1') {
+      
+    }
+  },
+  'addLinkId': true
+
+};
+
+function  loginUserStart()
+{
+	loginUser();
+	window.setTimeout("loginUserStartCheck()", 600);
+}
+
+function  loginUserStartCheck()
+{
+	if( IsLogin ){
+		document.getElementById('modifyLAN1').disabled = false;
+		document.getElementById('modifyLAN2').disabled = false;
+		document.getElementById('applypass').disabled = false;
+	}else{
+		document.getElementById('modifyLAN1').disabled = true;
+		document.getElementById('modifyLAN2').disabled = true;
+		document.getElementById('applypass').disabled = true;
+	}
+}
+
+function GetLanConfig()
+{
+	var LanC = false;
+	function LanConfigComplete()
+	{
+		if(LanC.readyState == 4 && LanC.status == 200 )
+		{
+			var Data = LanC.responseText.split("|");
+			document.getElementById("systemipsource").innerHTML = " " + Data[0] + " ";
+			document.getElementById("systemip").innerHTML = " " + Data[1] + " ";
+			document.getElementById("subnetmask").innerHTML = " " + Data[2] + " ";
+			document.getElementById("defaultgateway").innerHTML = " " + Data[3] + " ";
+			document.getElementById("dnsserver").innerHTML = " " + Data[4] + " ";
+			document.getElementById("systemhost").innerHTML = " " + Data[5] + " ";
+			document.getElementById("description").innerHTML = " " + Data[6] + " ";
+			// Control Access
+			if( Data[7] == "1" )
+			{
+				document.getElementById("controlaccess").innerHTML = " One Client Only ";
+			}
+			else
+			{
+				document.getElementById("controlaccess").innerHTML = " Multiple Clients ";
+			}
+			//	Time Out
+			document.getElementById("lankeepalive").innerHTML = " " + Data[8] + " ";
+			// Ping
+			if(  Data[9] == '0')
+			{
+				document.getElementById("pingserver").innerHTML = " Disabled ";
+			}
+			else if (Data[9] == '1')
+			{
+				document.getElementById("pingserver").innerHTML = " Enabled ";
+			}
+			// Auto neg
+			switch( Data[10] )
+			{
+				case "0":
+					document.getElementById("autonegotiate").innerHTML = " Auto Select ";
+				break;
+				case "1":
+					document.getElementById("autonegotiate").innerHTML = " 100 Mbps ";
+				break
+				case "2":
+					document.getElementById("autonegotiate").innerHTML = " 10 Mbps ";
+				break;
+			}
+			if(Data[11] == '0')
+			{
+				document.getElementById("vxidiscovery").innerHTML = " Disabled ";
+			}
+			else if (Data[11] == '1')
+			{
+				document.getElementById("vxidiscovery").innerHTML = " Enabled ";
+			}
+			document.getElementById("automdix").innerHTML = " " + Data[12] + " ";
+			document.getElementById("MulticastDNS").innerHTML = " " + Data[13] + " ";
+		}
+	}
+	if(window.XMLHttpRequest)
+	{
+		LanC = new XMLHttpRequest();
+	}
+	else if(window.ActiveXObject)
+	{
+		LanC = new ActiveXObject("Microsoft.XMLHTTP");
+	}
+	if(LanC)
+	{
+		LanC.open("GET", "/GetLanConfig?ses=" + window.name + "&id=" + Math.random(), true);
+		LanC.onreadystatechange = LanConfigComplete;
+		LanC.send(null);
+	}
+}
+
+function newpassword_Set()
+{
+	var req1 = false;
+	var OldPasswordText = document.getElementById("oldpassword");
+	var NewPassword1Text = document.getElementById("newpassword1");
+	var NewPassword2Text = document.getElementById("newpassword2");
+	if (IsLogin)
+	{
+		if(window.XMLHttpRequest)
+		{
+			req1 = new XMLHttpRequest();		
+		}
+		else if(window.ActiveXObject)
+		{
+			req1 = new ActiveXObject("Microsoft.XMLHTTP");
+		}
+		if(req1)
+		{
+			req1.open("GET", "/pass_txt?ses=" + window.name + "&value=" + OldPasswordText.value +"-" + NewPassword1Text.value + "-" + NewPassword2Text.value +"&id=" + Math.random(), true);
+			req1.send(null);
+			window.setTimeout("newpassword_VerifySet()", 600);
+		}
+	}
+}
+
+function newpassword_VerifySet()
+{
+	var changePassword = false;
+	if (IsLogin)
+	{
+		function changePasswordComplete()
+		{
+			if(changePassword.readyState == 4)
+			{
+				if(changePassword.status == 200)
+				{
+					setTimeoutPause(1);
+					if(changePassword.responseText == '0')
+					{
+						document.getElementById("oldpassword").value = "";
+						document.getElementById("newpassword1").value = "";
+						document.getElementById("newpassword2").value = "";
+						SaveDataToFlash();
+						alert("Password was changed succesfully. Please close or refresh this page.");
+						setTimeoutPause(0);
+						logout();
+						window.close();	
+					}
+					else if(changePassword.responseText == 'S')
+						alert("Password did not change! Your session is timed out or/and logged out.");
+					else if(changePassword.responseText == 'C')
+						alert("Password did not change! Communication error or Ilegal character (use 0-9, A-Z, a-z only).");
+					else if(changePassword.responseText == 'L')
+						alert("Password did not change! Old password is not correct.");
+					else if(changePassword.responseText == 'J')
+						alert("Password did not change! Entered new passwords are not identical");
+					else if(changePassword.responseText == 'D')
+						alert("Password did not change! Size of new password is not in range of 6 till 16 characters.");
+					else if(changePassword.responseText == 'K')
+						alert("Password did not change! The new password is same as the old one");
+					else if(changePassword.responseText == 'X')
+						alert("Password did not change! Ilegal character. Use 0-9, A-Z, a-z only.");
+					else
+						alert("Password did not change! Bug! Call to developer.");
+					setTimeoutPause(0);
+				}
+			}
+		}
+		
+		if(window.XMLHttpRequest)
+		{
+			changePassword = new XMLHttpRequest();		
+		}
+		else if(window.ActiveXObject)
+		{
+			changePassword = new ActiveXObject("Microsoft.XMLHTTP");
+		}
+		if(changePassword)
+		{
+			changePassword.open("GET", "/changepass_get?ses=" + window.name + "&id=" + Math.random(), true);
+			changePassword.onreadystatechange = changePasswordComplete;
+			changePassword.send(null);
+		}
+	}
+}
+
+
+function loadPage()
+{
+	if( window.name == "")
+	{
+		var aaa  = 1+ Math.floor(Math.random()* 255);
+		window.name = aaa.toString();
+	}
+	login('hide');
+	
+	GetLanConfig();
+	TimeOutGet();
+	setProlongAlive(1);
+	window.setTimeout("checkLoginGet()",600);	
+}
+
+window.onload = function()
+{
+	loadPage();
+}
+
+var myEventSent = 0;
+window.onbeforeunload = function()
+{
+	if(myEventSent == 0){
+		SetPsData("CLOSE");
+		setProlongAlive(1);
+		myEventSent = 1;
+	}
+}
+window.onunload = function()
+{
+	if(myEventSent == 0){
+		SetPsData("CLOSE");
+		setProlongAlive(1);
+		myEventSent = 1;
+	}
+}
+var myEvent = window.attachEvent || window.addEventListener;
+var chkevent = window.attachEvent ? 'onbeforeunload' : 'beforeunload'; /// make IE7, IE8 compitable
+myEvent(chkevent, function(e) { // For >=IE7, Chrome, Firefox
+    if(myEventSent == 0){
+		SetPsData("CLOSE");
+		setProlongAlive(1);
+		myEventSent = 1;
+	}
+});
+
+</script>
+
+<style type="text/css">
+.menutitle{
+cursor:pointer;
+margin-bottom: 5px;
+background-color:#ECECFF;
+color:#000000;
+width:140px;
+height:40;
+padding:2px;
+text-align:center;
+font-weight:bold;
+/*/*/border:1px solid #000000;/* */
+}
+.menutitleSelected{
+cursor:pointer;
+margin-bottom: 5px;
+background-color:#669999;
+color:#000000;
+width:140px;
+height:40;
+padding:2px;
+text-align:center;
+font-weight:bold;
+/*/*/border:1px solid #000000;/* */
+}
+.submenu{
+margin-bottom: 0.5em;
+}
+
+.log{
+cursor:pointer;
+margin-bottom: 5px;
+background-color:#ECECFF;
+color:#000000;
+width:100px;
+height:20;
+padding:2px;
+text-align:center;
+font-weight:bold;
+/*/*/border:1px solid #000000;/* */
+}
+
+.loginout{
+background-color:#D0DCDC;
+color:#000000;
+width:140px;
+text-align:center;
+/*/*/border:1px solid #000000;/* */
+}
+
+</style>
+</head>
+
+<body onmousemove=" LanTimeOut = RecTimeOut;" >
+
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+<tr>
+	<td align="left"  valign="middle" width="100">
+	<td align="center" valign="middle"><img src="./images/Banner.gif" alt="TDK-Lambda Logo"></td>
+</tr>
+</table>
+<table width="100%">
+<tbody>
+<tr>
+<td align="right" valign="top" width="25%"><br>
+<div id="masterdiv">
+	<div onclick="location='/'" class="menutitle"> Home </div>
+	<div onclick="location='/dcpower'" class="menutitle"> DC Power </div>
+	<div onclick="" class="menutitleSelected"> LAN </div>
+	<div onclick="location='/help'" class="menutitle"> Help </div>
+</div>
+
+<div id="popupbox" class="loginout"> 
+	<form name="login" action="" method="post">
+	Username: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <br>
+	<input name="username" id="username" size="14" maxlength="8" align="left"> &nbsp; &nbsp; &nbsp; <br>
+	Password: &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <br>
+	<input name="userpass" id="userpass" type="password" size="14" maxlength="16" onkeyup="if (event.keyCode == 13){loginUser();}" > &nbsp; &nbsp; &nbsp; <br><br>
+	<input type="button" name="cancel" value="Cancel" onclick="hidelogin()" > &nbsp; <input type="button" name="submit" value=" Login " onclick="loginUserStart()"> &nbsp; <br>
+	</form>
+</div>
+
+</td>
+<td align="left" valign="top" width="50%">
+
+<hr align="left" size="2" width="900">
+<table cellspacing="30" cellpadding="0" width="900" bgcolor="669999">
+	<TR><TD>
+		<div>
+			<div class="tab active" onclick="showTab(0)">Configure</div>
+			<div class="tab" onclick="showTab(1)">Advanced</div>
+			<div class="tab" onclick="showTab(2)">Users</div>
+		</div>
+	<div class="tabber" id="tab1" style="display: block">
+		<div class="tabbertab tabbertabdefault tab-content active" title="&nbsp; &nbsp; &nbsp; Configure &nbsp; &nbsp; &nbsp;" >
+			<h2>Configure</h2>
+			<table border="1" width="100%" bgcolor="FFFFFF">
+				<tr><TH colspan="2" >Present LAN Configuration</tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; IP Address Source:<td><div id="systemipsource" align="left" > - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; IP Address:<td><div id="systemip" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Subnet Mask:<td><div id="subnetmask" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Default Gateway:<td><div id="defaultgateway" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; DNS Server:<td><div id="dnsserver" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Hostname:<td><div id="systemhost" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Description:<td><div id="description" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Controller Access:<td><div id="controlaccess" align="left"> - </div></td></tr>
+				
+			</table>	
+			<table border="0" width="100%" bgcolor="FFFFFF">
+				<tr><td align = "center"><input  id="modifyLAN1" value="         Modify         " onclick="sessionNumberSet(4)" type="button" ></td></tr>
+			</table>
+		</div>
+
+		<div class="tabbertab tab-content" title="&nbsp; &nbsp; &nbsp; Advanced &nbsp; &nbsp; &nbsp;" >
+			<h2>Advanced</h2>
+			<table border="1" width="100%" bgcolor="FFFFFF">
+				<tr><TH colspan="2" >Present LAN Configuration</tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; LAN Timeout (sec):<td><div id="lankeepalive" align="left" > - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Ping Server:<td><div id="pingserver" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Auto-Negotiate:<td><div id="autonegotiate" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Vxi Discovery:<td><div id="vxidiscovery" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Auto-MDIX:<td><div id="automdix" align="left"> - </div></td></tr>
+				<tr><TH align = "left" width = "50%">&nbsp; &nbsp; &nbsp; Multicast DNS:<td><div id="MulticastDNS" align="left"> - </div></td></tr>
+			</table>		
+			<table border="0" width="100%" bgcolor="FFFFFF">
+				<tr><td align = "center"><input  id="modifyLAN2" value="         Modify         " onclick="sessionNumberSet(5)" type="button" ></td></tr>
+			</table>
+		</div>
+
+		<div class="tabbertab tab-content" title="&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Users &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;">
+			<h2>Users</h2>
+			<table border="0" width="100%">
+				<tr><th  colspan="2" align = "left" >Change Password <td></td></tr>
+				<tr><th align = "center" width="50%"> Enter old password <td width="50%"></td></tr>
+				<tr><th align = "center" width="50%"><input id="oldpassword" type="password" maxlength="16"><td></td></tr>
+				<tr><th align = "center" width="50%"> Enter new password <td width="50%"></td></tr>
+				<tr><th align = "center" width="50%"><input id="newpassword1" type="password" maxlength="16"><td></td></tr>
+				<tr><th align = "center" width="50%"> Retype new password <td width="50%"></td></tr>
+				<tr><th align = "center" width="50%"><input id="newpassword2" type="password" maxlength="16"><td></td></tr>
+				<tr><td align = "center" width="50%"><input id="applypass" value="Apply" onclick="newpassword_Set()" type="button" ></td><td></td></tr>
+			</table>
+		</div>
+	</div>
+	</TD></TR>
+</TABLE>
+
+<script type="text/javascript">
+
+tabberAutomatic(tabberOptions);
+
+</script> 
+
+<!--tr valign="top" > <td width="25%"></td><td align="left" width="50%" --> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+ &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+ &nbsp; &nbsp; &nbsp; &nbsp;
+	&copy; Copyright China Winsun 2024<!--/td></tr-->
+
+</tbody>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+<tbody>
+<tr>
+<td align="center" valign="middle">
+<h1><br>
+</h1>
+</td>
+
+</tr>
+</tbody>
+</table>
+</body></html>
