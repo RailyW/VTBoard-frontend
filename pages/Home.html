@@ -125,55 +125,56 @@
 </style>
 
 <script>
-    (() => {
-        let dataPollingInterval = null;
-        const fetchData = async () => {
-            const response = await fetch('../config/Home.json');
-            return response.json();
-        };
+    window.pageState = window.pageState || {};
+    if (!window.pageState.dataPollingInterval) {
+        window.pageState.dataPollingInterval = null;
+    }
+    async function fetchData() {
+        console.log("Home fetching...")
+        const response = await fetch('../config/Home.json');
+        return response.json();
+    }
 
-        const updatePageData = (data) => {
-            document.getElementById('system_model').textContent = data.welcome.system_model || '-';
-            document.getElementById('system_manufacturer').textContent = data.welcome.system_manufacturer || '-';
-            document.getElementById('serial_number').textContent = data.welcome.serial_number || '-';
-            document.getElementById('max_output').textContent = data.welcome.max_output || '-';
-            document.getElementById('firmware').textContent = data.welcome.firmware || '-';
-            document.getElementById('multi_drop_addr').textContent = data.welcome.multi_drop_addr || '-';
+    function updatePageData(data) {
+        document.getElementById('system_model').textContent = data.welcome.system_model || '-';
+        document.getElementById('system_manufacturer').textContent = data.welcome.system_manufacturer || '-';
+        document.getElementById('serial_number').textContent = data.welcome.serial_number || '-';
+        document.getElementById('max_output').textContent = data.welcome.max_output || '-';
+        document.getElementById('firmware').textContent = data.welcome.firmware || '-';
+        document.getElementById('multi_drop_addr').textContent = data.welcome.multi_drop_addr || '-';
 
-            document.getElementById('system_ip').textContent = data.LAN.system_ip || '-';
-            document.getElementById('system_mac').textContent = data.LAN.system_mac || '-';
-            document.getElementById('system_hostname').textContent = data.LAN.system_hostname || '-';
-            document.getElementById('lxi_version').textContent = data.LAN.lxi_version || '-';
-            document.getElementById('auto_mdix').textContent = data.LAN.auto_mdix || '-';
-            document.getElementById('auto_negotiate').textContent = data.LAN.auto_negotiate || '-';
-            document.getElementById('multicast_dns').textContent = data.LAN.multicast_dns || '-';
+        document.getElementById('system_ip').textContent = data.LAN.system_ip || '-';
+        document.getElementById('system_mac').textContent = data.LAN.system_mac || '-';
+        document.getElementById('system_hostname').textContent = data.LAN.system_hostname || '-';
+        document.getElementById('lxi_version').textContent = data.LAN.lxi_version || '-';
+        document.getElementById('auto_mdix').textContent = data.LAN.auto_mdix || '-';
+        document.getElementById('auto_negotiate').textContent = data.LAN.auto_negotiate || '-';
+        document.getElementById('multicast_dns').textContent = data.LAN.multicast_dns || '-';
 
-            document.getElementById('description').textContent = data.VISA.description || '-';
-            document.getElementById('vname_ip').textContent = data.VISA.vname_ip || '-';
-            document.getElementById('vname_host').textContent = data.VISA.vname_host || '-';
-        };
+        document.getElementById('description').textContent = data.VISA.description || '-';
+        document.getElementById('vname_ip').textContent = data.VISA.vname_ip || '-';
+        document.getElementById('vname_host').textContent = data.VISA.vname_host || '-';
+    }
 
-        const startDataPolling = () => {
-            const loadData = async () => {
-                try {
-                    const data = await fetchData();
-                    updatePageData(data);
-                } catch (error) {
-                    console.error('Failed to fetch data:', error);
-                }
-            };
-            loadData();
-            dataPollingInterval = setInterval(loadData, 1000);
-        };
-
-        window.setupPageCleanup = () => {
-            if (dataPollingInterval) {
-                clearInterval(dataPollingInterval);
-                dataPollingInterval = null;
-                console.log('dataPollingInterval Stopped');
+    function startDataPolling() {
+        const loadData = async () => {
+            try {
+                const data = await fetchData();
+                updatePageData(data);
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
             }
-        }
+        };
+        loadData();
+        window.pageState.dataPollingInterval = setInterval(loadData, 1000);
+    }
 
-        startDataPolling();
-    })();
+    window.setupPageCleanup = () => {
+        if (window.pageState.dataPollingInterval) {
+            clearInterval(window.pageState.dataPollingInterval);
+            window.pageState.dataPollingInterval = null;
+        }
+    }
+
+    startDataPolling();
 </script>

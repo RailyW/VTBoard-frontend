@@ -1,4 +1,274 @@
-<div id="page_2" class="page">
-    <h2>页面 2</h2>
-    <p>这是第二个页面的内容?</p>
+<div id="dc-power-control" class="page">
+    <div id="tabs">
+        <div class="tab active" data-tab="dc_output" onclick="switchDCPowerTab('dc_output')">Output</div>
+        <div class="tab" data-tab="dc_protection" onclick="switchDCPowerTab('dc_protection')">Protection</div>
+        <div class="tab" data-tab="dc_system" onclick="switchDCPowerTab('dc_system')">System</div>
+        <div class="tab" data-tab="dc_utility" onclick="switchDCPowerTab('dc_utility')">Utility</div>
+    </div>
+    <div id="tab-content">
+
+        <div id="dc_output" class="tab-panel active">
+            <div class="dc_output_row" style="justify-content: space-between">
+                <button
+                    onclick="alert('Blink Identify Btn')"
+                    class="operation_btn"
+                >
+                    Blink Identify
+                </button>
+                <div>
+                    <label for="multiDrop_address_select">
+                        Multi-drop Address:
+                    </label>
+                    <select
+                        name="multiDrop_address_select"
+                        id="multiDrop_address_select"
+                        style="height: 100%"
+                    >
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                    <button
+                        class="operation_btn"
+                        style="margin-left: 10px"
+                        onclick="alert('Refresh List Btn')"
+                    >
+                        Refresh List
+                    </button>
+                </div>
+            </div>
+            <hr />
+            <h3>Measurement</h3>
+            <div class="dc_output_row" style="justify-content: center">
+                <div style="display: flex; align-items: center; margin: 0 10px">
+                    <label for="measurement_cv">
+                        Voltage CV.
+                    </label>
+                    <div id="measurement_cv" class="measurement_block">
+                        OFF
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; margin: 0 10px">
+                    <label for="measurement_cc">
+                        Current CC.
+                    </label>
+                    <div id="measurement_cc" class="measurement_block">
+                        1.1 A
+                    </div>
+                </div>
+            </div>
+            <hr />
+            <h3>Settings</h3>
+            <div class="dc_output_row" style="justify-content: space-between">
+                <div>
+                    <div style="display: flex">
+                        <label for="check_modify">
+                            Check To Modify:
+                        </label>
+                        <input type="checkbox" id="check_modify" />
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="operation_btn">Apply</button>
+                        <button class="operation_btn">Refresh</button>
+                    </div>
+                </div>
+                <div>
+                    <div style="margin-left: 40px">
+                        <label for="check_output">Output:</label>
+                        <div id="check_output">
+                            <input
+                                type="radio"
+                                name="output"
+                                id="output_on"
+                                value="on"
+                                style="margin-top: 10px"
+                            />
+                            <label for="output_on">On</label>
+                            <br />
+                            <input
+                                type="radio"
+                                name="output"
+                                id="output_off"
+                                value="off"
+                                style="margin-top: 10px"
+                            />
+                            <label for="output_off">Off</label>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div style="margin-left: 40px">
+                        <label for="dc_set_vol_limit">Voltage Limit</label>
+                        <div style="display: flex; align-items: end">
+                            <div class="vol_limit_block" id="dc_set_vol_limit">
+                                0.00
+                            </div>
+                            <label for="dc_set_vol_limit">Volts</label>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div style="margin-left: 40px">
+                        <label for="dc_cu_vol_limit">Current Limit</label>
+                        <div style="display: flex; align-items: end">
+                            <div class="vol_limit_block" id="dc_cu_vol_limit">
+                                0.00
+                            </div>
+                            <label for="dc_cu_vol_limit">Amps</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr />
+            <h3>Faults</h3>
+            <div class="dc_output_row">
+                <table class="dc_faults_table" border="1">
+                    <tr>
+                        <td>AC</td>
+                        <td>OTP</td>
+                        <td>FLD</td>
+                        <td>OVP</td>
+                        <td>SO</td>
+                        <td>OFF</td>
+                        <td>ENA</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div id="dc_protection" class="tab-panel">
+            <h2>Protection</h2>
+            <div>
+                <p><strong>Over-Voltage Protection:</strong> Enabled</p>
+                <p><strong>Under-Voltage Protection:</strong> Disabled</p>
+                <button onclick="alert('Protection Settings Applied')">Apply Protection</button>
+            </div>
+        </div>
+
+        <div id="dc_system" class="tab-panel">
+            <h2>System</h2>
+            <div>
+                <p><strong>Multi-drop Address:</strong> Address 1</p>
+                <button onclick="alert('System Reset')">Reset System</button>
+            </div>
+        </div>
+
+        <div id="dc_utility" class="tab-panel">
+            <h2>Utility</h2>
+            <div>
+                <p><strong>SCPI Commands:</strong> Send custom SCPI commands here.</p>
+                <textarea placeholder="Enter SCPI command"></textarea>
+                <button onclick="alert('SCPI Command Sent')">Send Command</button>
+            </div>
+        </div>
+
+    </div>
 </div>
+
+<script>
+    window.pageState = window.pageState || {};
+    if (!window.pageState.dataPollingInterval) {
+        window.pageState.dataPollingInterval = null;
+    }
+    async function fetchData() {
+        console.log("DCPower fetching...")
+        const response = await fetch('../config/DCPower.json');
+        return response.json();
+    }
+    // 切换选项卡
+    function switchDCPowerTab(tabId) {
+        // 移除所有选项卡和内容的活动状态
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+        // 激活当前选项卡和内容
+        document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    function updatePageData(data) {
+
+    }
+
+    function startDataPolling() {
+        const loadData = async () => {
+            try {
+                const data = await fetchData();
+                updatePageData(data);
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            }
+        };
+        loadData();
+        window.pageState.dataPollingInterval = setInterval(loadData, 1000);
+    }
+    startDataPolling();
+</script>
+
+<style>
+    #tabs {
+        display: flex;
+        margin-bottom: 20px;
+    }
+
+    .tab {
+        cursor: pointer;
+        padding: 10px 20px;
+        background-color: #ececff;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+    }
+
+    .tab.active {
+        background-color: #669999;
+        color: #fff;
+    }
+
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    .dc_output_row {
+        width: 100%;
+        display: flex;
+    }
+
+    .measurement_block {
+        margin-left: 20px;
+        display: flex;
+        width: 240px;
+        height: 40px;
+        background-color: black;
+        color: #00ff00;
+        font-size: 20px;
+        font-weight: bold;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .vol_limit_block {
+        margin-top: 15px;
+        margin-right: 5px;
+        display: flex;
+        padding: 5px 5px;
+        background-color: #f4f4f4;
+        color: #878787;
+        width: 120px;
+        height: 30px;
+        justify-content: end;
+        align-items: end;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .dc_faults_table {
+        width: 100%;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+    }
+</style>

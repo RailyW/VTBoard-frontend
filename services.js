@@ -56,5 +56,5 @@ function updateActiveTab(pageIndex) {
 
 // 初次加载页面
 window.onload = function() {
-    loadPage(0);
+    loadPage(1);
 }

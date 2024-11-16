@@ -1,0 +1,16 @@
+{
+  "output": {
+    "voltage": "12.0 V",
+    "current": "1.5 A"
+  },
+  "protection": {
+    "overVoltage": "Enabled",
+    "underVoltage": "Disabled"
+  },
+  "system": {
+    "multiDropAddress": "Address 1"
+  },
+  "utility": {
+    "scpi": "Enter SCPI commands here."
+  }
+}
