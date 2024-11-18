@@ -27,7 +27,7 @@ hr {
 #panel_area {
     display: flex;
     width: 1300px;
-    height: 700px;
+    height: 750px;
     background-color: aliceblue;
     border: 1px solid black;
     border-radius: 10px;

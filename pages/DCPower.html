@@ -8,7 +8,7 @@
     <div id="tab-content">
 
         <div id="dc_output" class="tab-panel active">
-            <div class="dc_output_row" style="justify-content: space-between">
+            <div class="dc_row" style="justify-content: space-between">
                 <button
                     onclick="alert('Blink Identify Btn')"
                     class="operation_btn"
@@ -16,12 +16,12 @@
                     Blink Identify
                 </button>
                 <div>
-                    <label for="multiDrop_address_select">
+                    <label for="multiDrop_address_select_output">
                         Multi-drop Address:
                     </label>
                     <select
-                        name="multiDrop_address_select"
-                        id="multiDrop_address_select"
+                        name="multiDrop_address_select_output"
+                        id="multiDrop_address_select_output"
                         style="height: 100%"
                     >
                         <option value="1" selected>1</option>
@@ -39,7 +39,7 @@
             </div>
             <hr />
             <h3>Measurement</h3>
-            <div class="dc_output_row" style="justify-content: center">
+            <div class="dc_row" style="justify-content: center">
                 <div style="display: flex; align-items: center; margin: 0 10px">
                     <label for="measurement_cv">
                         Voltage CV.
@@ -59,13 +59,13 @@
             </div>
             <hr />
             <h3>Settings</h3>
-            <div class="dc_output_row" style="justify-content: space-between">
+            <div class="dc_row" style="justify-content: space-between">
                 <div>
                     <div style="display: flex">
-                        <label for="check_modify">
+                        <label for="setting_check_modify" style="align-content: center">
                             Check To Modify:
                         </label>
-                        <input type="checkbox" id="check_modify" />
+                        <input type="checkbox" id="setting_check_modify" />
                     </div>
                     <div style="margin-top: 20px;">
                         <button class="operation_btn">Apply</button>
@@ -121,7 +121,7 @@
             </div>
             <hr />
             <h3>Faults</h3>
-            <div class="dc_output_row">
+            <div class="dc_row">
                 <table class="dc_faults_table" border="1">
                     <tr>
                         <td>AC</td>
@@ -137,31 +137,296 @@
         </div>
 
         <div id="dc_protection" class="tab-panel">
-            <h2>Protection</h2>
-            <div>
-                <p><strong>Over-Voltage Protection:</strong> Enabled</p>
-                <p><strong>Under-Voltage Protection:</strong> Disabled</p>
-                <button onclick="alert('Protection Settings Applied')">Apply Protection</button>
+            <div class="dc_row" style="justify-content: end">
+                <div>
+                    <label for="multiDrop_address_select_protection">
+                        Multi-drop Address:
+                    </label>
+                    <select
+                        name="multiDrop_address_select_protection"
+                        id="multiDrop_address_select_protection"
+                        style="height: 100%"
+                    >
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                    <button
+                        class="operation_btn"
+                        style="margin-left: 10px"
+                        onclick="alert('Refresh List Btn')"
+                    >
+                        Refresh List
+                    </button>
+                </div>
+            </div>
+            <hr />
+            <h3>Over-Voltage Protection</h3>
+            <div class="dc_row" style="justify-content: space-between">
+                <div style="text-align: center">
+                    <label for="ovp_setting" style="display: block; margin-bottom: 5px">OVP Settings</label>
+                    <div id="ovp_setting" class="measurement_block">
+                        35.0
+                    </div>
+                </div>
+                <div style="text-align: center">
+                    <label for="new_ovp_setting" style="display: block; margin-bottom: 5px">New OVP Setting</label>
+                    <input id="new_ovp_setting" style="width: 200px; height: 35px;" />
+                </div>
+                <div style="display: flex; flex-direction: column; justify-content: end">
+                    <div>
+                        <input
+                            type="radio"
+                            name="check_ovp_setting"
+                            id="check_ovp_setting_max"
+                            value="max"
+                            style="margin-top: 10px"
+                        />
+                        <label for="check_ovp_setting_max">Set to Maximum</label>
+                    </div>
+                    <div>
+                        <input
+                            type="radio"
+                            name="check_ovp_setting"
+                            id="check_ovp_setting_value"
+                            value="value"
+                            style="margin-top: 10px"
+                        />
+                        <label for="check_ovp_setting_value">Set to Value</label>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: end">
+                    <button class="operation_btn">Apply</button>
+                </div>
+            </div>
+            <hr />
+            <h3>Under-Voltage Limit</h3>
+            <div class="dc_row" style="justify-content: space-between">
+                <div style="text-align: center">
+                    <label for="uvl_setting" style="display: block; margin-bottom: 5px">UVL Settings</label>
+                    <div id="uvl_setting" class="measurement_block">
+                        0.0
+                    </div>
+                </div>
+                <div style="text-align: center">
+                    <label for="new_uvl_setting" style="display: block; margin-bottom: 5px">New UVL Setting</label>
+                    <input id="new_uvl_setting" style="width: 200px; height: 35px;" />
+                </div>
+                <div style="display: flex; flex-direction: column; justify-content: end">
+                    <div>
+                        <input
+                            type="radio"
+                            name="check_uvl_setting"
+                            id="check_uvl_setting_zero"
+                            value="zero"
+                            style="margin-top: 10px"
+                        />
+                        <label for="check_uvl_setting_zero">Set to Zero</label>
+                    </div>
+                    <div>
+                        <input
+                            type="radio"
+                            name="check_uvl_setting"
+                            id="check_uvl_setting_value"
+                            value="value"
+                            style="margin-top: 10px"
+                        />
+                        <label for="check_uvl_setting_value">Set to Value</label>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: end">
+                    <button class="operation_btn">Apply</button>
+                </div>
+            </div>
+            <hr />
+            <h3>Foldback Protection</h3>
+            <div class="dc_row" style="justify-content: space-between">
+                <div style="display: flex">
+                    <label for="foldback_check_modify" style="align-content: center">
+                        Check To Modify:
+                    </label>
+                    <input type="checkbox" id="foldback_check_modify" />
+                </div>
+                <div style="display: flex; flex-direction: column; justify-content: end">
+                    <div>
+                        <input
+                            type="radio"
+                            name="check_foldback_setting"
+                            id="check_foldback_enable"
+                            value="zero"
+                            style="margin-top: 10px"
+                        />
+                        <label for="check_foldback_enable">Enable</label>
+                    </div>
+                    <div>
+                        <input
+                            type="radio"
+                            name="check_foldback_setting"
+                            id="check_foldback_disable"
+                            value="value"
+                            style="margin-top: 10px"
+                        />
+                        <label for="check_foldback_disable">Disable</label>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: end">
+                    <button class="operation_btn">Apply</button>
+                </div>
+            </div>
+            <hr />
+            <h3>Auto Start Setting</h3>
+            <div class="dc_row" style="justify-content: space-between">
+                <div style="display: flex">
+                    <label for="auto_start_modify" style="align-content: center">
+                        Check To Modify:
+                    </label>
+                    <input type="checkbox" id="auto_start_modify" />
+                </div>
+                <div style="display: flex; flex-direction: column; justify-content: end">
+                    <div>
+                        <input
+                            type="radio"
+                            name="check_auto_start_setting"
+                            id="auto_start_safe_start"
+                            value="zero"
+                            style="margin-top: 10px"
+                        />
+                        <label for="auto_start_safe_start">Safe Start</label>
+                    </div>
+                    <div>
+                        <input
+                            type="radio"
+                            name="check_auto_start_setting"
+                            id="auto_start_auto_start"
+                            value="value"
+                            style="margin-top: 10px"
+                        />
+                        <label for="auto_start_auto_start">Auto Start</label>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: end">
+                    <button class="operation_btn">Apply</button>
+                </div>
             </div>
         </div>
-
         <div id="dc_system" class="tab-panel">
-            <h2>System</h2>
-            <div>
-                <p><strong>Multi-drop Address:</strong> Address 1</p>
-                <button onclick="alert('System Reset')">Reset System</button>
+            <div class="dc_row" style="justify-content: end">
+                <div>
+                    <label for="multiDrop_address_select_system">
+                        Multi-drop Address:
+                    </label>
+                    <select
+                        name="multiDrop_address_select_system"
+                        id="multiDrop_address_select_system"
+                        style="height: 100%"
+                    >
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                    <button
+                        class="operation_btn"
+                        style="margin-left: 10px"
+                        onclick="alert('Refresh List Btn')"
+                    >
+                        Refresh List
+                    </button>
+                </div>
+            </div>
+            <hr />
+            <h3>Reset the DC Power</h3>
+            <div class="dc_row" style="justify-content: space-between; align-items: center">
+                <label for="reset_one_instrument_btn">
+                    Reset Selected Multi-Drop Instrument
+                </label>
+                <button id="reset_one_instrument_btn" class="operation_btn">
+                    Reset One Instrument
+                </button>
+            </div>
+            <br />
+            <div class="dc_row" style="justify-content: space-between; align-items: center">
+                <label for="reset_all_instrument_btn">
+                    Reset All Instruments on this Multi-Drop Bus
+                </label>
+                <button id="reset_all_instrument_btn" class="operation_btn">
+                    Reset All Instruments
+                </button>
+            </div>
+            <hr />
+            <h3>Save / Recall Settings</h3>
+            <div class="dc_row" style="justify-content: space-between; align-items: center">
+                <label for="save_recall_btn_group">
+                    The saved settings are kept until the power supply is turned off
+                </label>
+                <div id="save_recall_btn_group" style="display: flex; justify-content: space-between; gap: 10px">
+                    <button class="operation_btn">
+                        Save
+                    </button>
+                    <button class="operation_btn">
+                        Recall
+                    </button>
+                </div>
             </div>
         </div>
 
         <div id="dc_utility" class="tab-panel">
-            <h2>Utility</h2>
-            <div>
-                <p><strong>SCPI Commands:</strong> Send custom SCPI commands here.</p>
-                <textarea placeholder="Enter SCPI command"></textarea>
-                <button onclick="alert('SCPI Command Sent')">Send Command</button>
+            <div class="dc_row" style="justify-content: end">
+                <div>
+                    <label for="multiDrop_address_select_utility">
+                        Multi-drop Address:
+                    </label>
+                    <select
+                        name="multiDrop_address_select_utility"
+                        id="multiDrop_address_select_utility"
+                        style="height: 100%"
+                    >
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                    <button
+                        class="operation_btn"
+                        style="margin-left: 10px"
+                        onclick="alert('Refresh List Btn')"
+                    >
+                        Refresh List
+                    </button>
+                </div>
+            </div>
+            <hr />
+            <h3>Send SCPI Commands</h3>
+            <div class="dc_row" style="gap: 10px">
+                <input id="send_scpi_input" style="width: 100%"/>
+                <label for="send_scpi_input">
+                    <button class="operation_btn">Send and Read</button>
+                </label>
+            </div>
+            <div class="dc_row">
+                <textarea
+                    id="scpi_output"
+                    class="dc_utility_textarea"
+                    style="margin-top: 10px"
+                    rows="10"
+                    wrap="off"
+                ></textarea>
+                <label for="scpi_output"></label>
+            </div>
+            <hr />
+            <h3>Read System Errors</h3>
+            <div class="dc_row" style="gap: 10px">
+                <textarea
+                    id="system_error_output"
+                    class="dc_utility_textarea"
+                    rows="10"
+                    wrap="off"
+                ></textarea>
+                <label for="system_error_output">
+                    <button class="operation_btn" style="height: 100%">
+                        Read Errors
+                    </button>
+                </label>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -203,6 +468,7 @@
         window.pageState.dataPollingInterval = setInterval(loadData, 1000);
     }
     startDataPolling();
+    switchDCPowerTab('dc_output');
 </script>
 
 <style>
@@ -232,7 +498,7 @@
         display: block;
     }
 
-    .dc_output_row {
+    .dc_row {
         width: 100%;
         display: flex;
     }
@@ -270,5 +536,10 @@
         text-align: center;
         font-size: 18px;
         font-weight: bold;
+    }
+
+    .dc_utility_textarea {
+        width: 100%;
+        overflow-y: scroll;
     }
 </style>
