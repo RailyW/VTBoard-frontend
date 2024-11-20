@@ -1,4 +1,145 @@
-<div id="page_3" class="page">
-    <h2>页面 3</h2>
-    <p>这是第三个页面的内容。</p>
+<div id="LAN" class="page">
+    <div id="tabs">
+        <div class="tab active" data-tab="lan_configure" onclick="switchDCPowerTab('lan_configure')">Configure</div>
+        <div class="tab" data-tab="lan_advanced" onclick="switchDCPowerTab('lan_advanced')">Advanced</div>
+        <div class="tab" data-tab="lan_users" onclick="switchDCPowerTab('lan_users')">Users</div>
+    </div>
+    <div id="tab-content">
+
+        <div id="lan_configure" class="tab-panel active">
+            <div class="lan_row">
+                <table class="lan_table" border="1" id="lan_configure_table">
+                    <thead>
+                        <tr>
+                            <th colspan="2">Present LAN Configuration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>LAN Timeout(sec):</td>
+                            <td>0</td>
+                        </tr>
+                        <tr>
+                            <td>Ping Server:</td>
+                            <td>Enabled</td>
+                        </tr>
+                        <tr>
+                            <td>Auto-Negotiate:</td>
+                            <td>Auto Select</td>
+                        </tr>
+                        <tr>
+                            <td>Vxi Discovery:</td>
+                            <td>Enabled</td>
+                        </tr>
+                        <tr>
+                            <td>Auto-MDIX:</td>
+                            <td>Enabled</td>
+                        </tr>
+                        <tr>
+                            <td>Multicast DNS:</td>
+                            <td>Enabled</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="lan_row" style="justify-content: center; margin-top: 10px">
+                <button class="operation_btn">Modify</button>
+            </div>
+        </div>
+
+        <div id="lan_advanced" class="tab-panel">
+            2
+        </div>
+        <div id="lan_users" class="tab-panel">
+            3
+        </div>
+    </div>
 </div>
+
+<script>
+    window.pageState = window.pageState || {};
+    if (!window.pageState.dataPollingInterval) {
+        window.pageState.dataPollingInterval = null;
+    }
+    async function fetchData() {
+        console.log("LAN fetching...")
+        const response = await fetch('../config/LAN.json');
+        return response.json();
+    }
+    // 切换选项卡
+    function switchDCPowerTab(tabId) {
+        // 移除所有选项卡和内容的活动状态
+        document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+        // 激活当前选项卡和内容
+        document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    function updatePageData(data) {
+
+    }
+
+    function startDataPolling() {
+        const loadData = async () => {
+            try {
+                const data = await fetchData();
+                updatePageData(data);
+            } catch (error) {
+                console.error('Failed to fetch data:', error);
+            }
+        };
+        loadData();
+        window.pageState.dataPollingInterval = setInterval(loadData, 1000);
+    }
+    startDataPolling();
+    switchDCPowerTab('lan_configure');
+</script>
+
+<style>
+    #tabs {
+        display: flex;
+        margin-bottom: 20px;
+    }
+
+    .tab {
+        cursor: pointer;
+        padding: 10px 20px;
+        background-color: #ececff;
+        border: 1px solid #ccc;
+        margin-right: 5px;
+    }
+
+    .tab.active {
+        background-color: #669999;
+        color: #fff;
+    }
+
+    .tab-panel {
+        display: none;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    .lan_row {
+        width: 100%;
+        display: flex;
+    }
+
+    .lan_table {
+        width: 100%;
+        text-align: center;
+        font-size: 18px;
+    }
+
+    .lan_table td {
+        width: 50%;
+    }
+
+    .lan_table td:first-child {
+        font-weight: bold;
+    }
+</style>
